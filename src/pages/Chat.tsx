@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/PageHeader";
+import { Navigation } from "@/components/Navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,11 +76,12 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <PageHeader
-          title="Chat with Documents"
-          description="Ask questions about your uploaded documents"
-        />
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">Chat with Documents</h1>
+          <p className="text-muted-foreground">Ask questions about your uploaded documents</p>
+        </header>
 
         <Card className="bg-card shadow-soft flex flex-col h-[600px]">
           <div className="flex-1 overflow-y-auto p-6 space-y-4">

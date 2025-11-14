@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2 } from "lucide-react";
+import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
+import { Navigation } from "@/components/Navigation";
 
 type Document = {
   id: string;
@@ -231,6 +232,7 @@ const Documents = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-2">Document Library</h1>

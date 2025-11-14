@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { FileText, Briefcase, Award, TrendingUp, Upload, Sparkles, LogOut } from "lucide-react";
+import { FileText, Briefcase, Award, TrendingUp, Upload, Sparkles, LogOut, MessageSquare } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Navigation } from "@/components/Navigation";
 
 const Dashboard = () => {
   const { user, loading, signOut } = useAuth();
@@ -65,6 +66,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
         <header className="mb-8 flex items-center justify-between">
           <div>
@@ -124,6 +126,12 @@ const Dashboard = () => {
                 <Button variant="outline" className="w-full justify-start">
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate New Resume
+                </Button>
+              </Link>
+              <Link to="/chat">
+                <Button variant="outline" className="w-full justify-start">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Chat with Documents
                 </Button>
               </Link>
               <Link to="/resumes">
