@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, Sparkles, FileText, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { PageHeader } from "@/components/PageHeader";
+import { Navigation } from "@/components/Navigation";
 
 const Generate = () => {
   const { toast } = useToast();
@@ -41,11 +41,12 @@ const Generate = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <PageHeader 
-          title="Generate Resume" 
-          description="Paste or upload a job description to create tailored resumes" 
-        />
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">Generate Resume</h1>
+          <p className="text-muted-foreground">Paste or upload a job description to create tailored resumes</p>
+        </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">

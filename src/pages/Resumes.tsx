@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, TrendingUp, Download, Eye, Star } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { Navigation } from "@/components/Navigation";
 
 const Resumes = () => {
   const resumes = [
@@ -44,11 +44,12 @@ const Resumes = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
+      <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <PageHeader 
-          title="My Resumes" 
-          description="View and manage all your generated resumes" 
-        />
+        <header className="mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">My Resumes</h1>
+          <p className="text-muted-foreground">View and manage all your generated resumes</p>
+        </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="p-4 bg-gradient-card shadow-soft">
