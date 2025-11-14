@@ -61,6 +61,7 @@ serve(async (req) => {
         query_embedding: queryEmbedding,
         match_threshold: 0.7,
         match_count: 5,
+        filter_user_id: user.id,
       }
     );
 

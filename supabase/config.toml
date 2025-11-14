@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.generate-resume]
 verify_jwt = true
+
+[functions.chat-documents]
+verify_jwt = true
