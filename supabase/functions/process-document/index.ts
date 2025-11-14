@@ -63,6 +63,8 @@ serve(async (req) => {
       // Try to extract text - this works for plain text files
       // For DOCX/PDF, we'll implement proper parsing later
       text = await fileData.text();
+      // Remove null bytes that Postgres TEXT columns cannot handle
+      text = text.replace(/\u0000/g, '');
       console.log('Extracted text length:', text.length);
     } catch (error) {
       console.log('Could not extract text directly, file might be binary format');
