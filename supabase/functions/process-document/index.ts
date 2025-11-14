@@ -57,9 +57,17 @@ serve(async (req) => {
       throw new Error('Failed to download file');
     }
 
-    // Extract text from file
-    const text = await fileData.text();
-    console.log('Extracted text length:', text.length);
+    // Extract text from file (for now, just use placeholder for binary files)
+    let text = '';
+    try {
+      // Try to extract text - this works for plain text files
+      // For DOCX/PDF, we'll implement proper parsing later
+      text = await fileData.text();
+      console.log('Extracted text length:', text.length);
+    } catch (error) {
+      console.log('Could not extract text directly, file might be binary format');
+      text = `[Binary file: ${document.name}]`;
+    }
 
     // Update document with extracted text
     const { error: updateError } = await supabase
@@ -68,7 +76,8 @@ serve(async (req) => {
       .eq('id', documentId);
 
     if (updateError) {
-      throw new Error('Failed to update document');
+      console.error('Update error details:', updateError);
+      throw new Error(`Failed to update document: ${updateError.message}`);
     }
 
     // Chunk text for embeddings (split into ~500 char chunks)
