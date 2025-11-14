@@ -1,78 +1,129 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, Upload, Sparkles, TrendingUp } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Progress } from "@/components/ui/progress";
+import { FileText, Briefcase, Award, TrendingUp, Upload, Sparkles, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    documents: 0,
+    resumes: 0,
+    avgScore: 0,
+  });
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (user) {
+      fetchStats();
+    }
+  }, [user]);
+
+  const fetchStats = async () => {
+    if (!user) return;
+
+    const [{ count: documentsCount }, { count: resumesCount }, { data: resumes }] = await Promise.all([
+      supabase.from('documents').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('generated_resumes').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('generated_resumes').select('ats_score').eq('user_id', user.id),
+    ]);
+
+    const avgScore = resumes && resumes.length > 0
+      ? Math.round(resumes.reduce((sum, r) => sum + (r.ats_score || 0), 0) / resumes.length)
+      : 0;
+
+    setStats({
+      documents: documentsCount || 0,
+      resumes: resumesCount || 0,
+      avgScore,
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <div className="text-center">
+          <Sparkles className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Resume Studio</h1>
-          <p className="text-muted-foreground">AI-powered ATS resume optimization</p>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary" />
-              </div>
-              <span className="text-3xl font-bold text-foreground">12</span>
-            </div>
-            <p className="text-muted-foreground text-sm">Resumes Created</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
-                <Upload className="w-6 h-6 text-secondary" />
-              </div>
-              <span className="text-3xl font-bold text-foreground">8</span>
-            </div>
-            <p className="text-muted-foreground text-sm">Documents Uploaded</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-success" />
-              </div>
-              <span className="text-3xl font-bold text-foreground">94%</span>
-            </div>
-            <p className="text-muted-foreground text-sm">Avg ATS Score</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-accent" />
-              </div>
-              <span className="text-3xl font-bold text-foreground">24</span>
-            </div>
-            <p className="text-muted-foreground text-sm">AI Generations</p>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 p-8 bg-gradient-primary shadow-medium">
-            <h2 className="text-2xl font-bold text-white mb-3">Create Your Next Resume</h2>
-            <p className="text-white/90 mb-6">Upload a job description and let AI craft the perfect resume tailored to the position</p>
+        <header className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {user.email}</p>
+          </div>
+          <div className="flex gap-3">
             <Link to="/generate">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90">
-                <Sparkles className="w-5 h-5 mr-2" />
+              <Button className="bg-gradient-primary shadow-soft hover:shadow-medium transition-all">
+                <Sparkles className="w-4 h-4 mr-2" />
                 Generate Resume
               </Button>
             </Link>
+            <Button variant="outline" onClick={signOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all">
+            <FileText className="w-8 h-8 text-primary mb-3" />
+            <h3 className="font-semibold text-foreground mb-1">Documents</h3>
+            <p className="text-3xl font-bold text-foreground mb-1">{stats.documents}</p>
+            <p className="text-sm text-muted-foreground">Uploaded files</p>
           </Card>
 
-          <Card className="p-6 bg-gradient-card shadow-soft">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
+          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all">
+            <Briefcase className="w-8 h-8 text-secondary mb-3" />
+            <h3 className="font-semibold text-foreground mb-1">Generated</h3>
+            <p className="text-3xl font-bold text-foreground mb-1">{stats.resumes}</p>
+            <p className="text-sm text-muted-foreground">Resumes created</p>
+          </Card>
+
+          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all">
+            <TrendingUp className="w-8 h-8 text-success mb-3" />
+            <h3 className="font-semibold text-foreground mb-1">Avg. ATS Score</h3>
+            <p className="text-3xl font-bold text-foreground mb-1">{stats.avgScore}%</p>
+            <p className="text-sm text-muted-foreground">
+              {stats.avgScore >= 80 ? 'Excellent match' : stats.avgScore >= 60 ? 'Good match' : 'Needs improvement'}
+            </p>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <Card className="p-6 bg-card shadow-soft">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <Link to="/documents">
                 <Button variant="outline" className="w-full justify-start">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Documents
+                </Button>
+              </Link>
+              <Link to="/generate">
+                <Button variant="outline" className="w-full justify-start">
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate New Resume
                 </Button>
               </Link>
               <Link to="/resumes">
@@ -83,29 +134,50 @@ const Dashboard = () => {
               </Link>
             </div>
           </Card>
+
+          <Card className="p-6 bg-gradient-primary shadow-medium">
+            <Award className="w-8 h-8 text-white mb-3" />
+            <h3 className="text-xl font-semibold text-white mb-2">ATS Optimization</h3>
+            <p className="text-white/90 mb-4">
+              Our AI analyzes job descriptions and matches them with your experience to create optimized, ATS-friendly resumes.
+            </p>
+            <Progress value={stats.avgScore} className="bg-white/20" />
+            <p className="text-white/90 text-sm mt-2">Current average: {stats.avgScore}%</p>
+          </Card>
         </div>
 
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold text-foreground mb-4">Recent Resumes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-6 bg-card shadow-soft hover:shadow-medium transition-all hover:scale-[1.02]">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <TrendingUp className="w-4 h-4 text-success" />
-                    <span className="text-sm font-semibold text-success">92%</span>
-                  </div>
-                </div>
-                <h4 className="font-semibold text-foreground mb-1">Senior Software Engineer</h4>
-                <p className="text-sm text-muted-foreground mb-3">Tech Corp Inc.</p>
-                <p className="text-xs text-muted-foreground">Generated 2 days ago</p>
-              </Card>
-            ))}
+        <Card className="p-6 bg-card shadow-soft">
+          <h3 className="text-xl font-semibold text-foreground mb-4">How It Works</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <Upload className="w-8 h-8 text-primary" />
+              </div>
+              <h4 className="font-semibold text-foreground mb-2">1. Upload Documents</h4>
+              <p className="text-sm text-muted-foreground">
+                Upload your resumes, work experience, and skills documents
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-secondary/10 flex items-center justify-center mx-auto mb-3">
+                <Sparkles className="w-8 h-8 text-secondary" />
+              </div>
+              <h4 className="font-semibold text-foreground mb-2">2. Paste Job Description</h4>
+              <p className="text-sm text-muted-foreground">
+                Add the job description you want to apply for
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-3">
+                <TrendingUp className="w-8 h-8 text-success" />
+              </div>
+              <h4 className="font-semibold text-foreground mb-2">3. Get Tailored Resume</h4>
+              <p className="text-sm text-muted-foreground">
+                Receive multiple optimized resumes with ATS scores
+              </p>
+            </div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
