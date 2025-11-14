@@ -14,7 +14,193 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      document_embeddings: {
+        Row: {
+          chunk_index: number
+          chunk_text: string
+          created_at: string
+          document_id: string
+          embedding: string | null
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          chunk_index: number
+          chunk_text: string
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          chunk_index?: number
+          chunk_text?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_embeddings_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string
+          extracted_text: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          metadata: Json | null
+          name: string
+          type: Database["public"]["Enums"]["document_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_text?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          type: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_text?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          type?: Database["public"]["Enums"]["document_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      generated_resumes: {
+        Row: {
+          ats_score: number | null
+          content: string
+          created_at: string
+          format: string | null
+          id: string
+          job_description_id: string | null
+          metadata: Json | null
+          style: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          ats_score?: number | null
+          content: string
+          created_at?: string
+          format?: string | null
+          id?: string
+          job_description_id?: string | null
+          metadata?: Json | null
+          style?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          ats_score?: number | null
+          content?: string
+          created_at?: string
+          format?: string | null
+          id?: string
+          job_description_id?: string | null
+          metadata?: Json | null
+          style?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_resumes_job_description_id_fkey"
+            columns: ["job_description_id"]
+            isOneToOne: false
+            referencedRelation: "job_descriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_descriptions: {
+        Row: {
+          company: string | null
+          created_at: string
+          description: string
+          id: string
+          keywords: string[] | null
+          requirements: string | null
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          keywords?: string[] | null
+          requirements?: string | null
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          keywords?: string[] | null
+          requirements?: string | null
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          linkedin_url: string | null
+          portfolio_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          linkedin_url?: string | null
+          portfolio_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          linkedin_url?: string | null
+          portfolio_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +209,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      document_type: "resume" | "experience" | "skills" | "portfolio" | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +336,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      document_type: ["resume", "experience", "skills", "portfolio", "other"],
+    },
   },
 } as const
