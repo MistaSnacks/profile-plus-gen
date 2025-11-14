@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Documents from "./pages/Documents";
 import Generate from "./pages/Generate";
 import Resumes from "./pages/Resumes";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/documents" element={<Documents />} />
           <Route path="/generate" element={<Generate />} />
           <Route path="/resumes" element={<Resumes />} />
+          <Route path="/auth" element={<Auth />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
