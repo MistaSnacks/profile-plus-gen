@@ -103,6 +103,8 @@ Do NOT use markdown syntax (no **, ##, etc.). Use plain text with clear spacing 
 JOB DESCRIPTION:
 ${jobDescription}
 
+IMPORTANT: First, extract and identify the job title and company name from the job description above. If not explicitly stated, infer the most likely job title.
+
 USER PROFILE:
 Name: ${profile?.full_name || 'User'}
 Email: ${profile?.email || ''}
@@ -113,6 +115,48 @@ USER'S DOCUMENTS AND EXPERIENCE:
 ${documentsText}
 
 Generate a complete, ATS-optimized resume that matches this job description.`;
+
+    // First, extract job title and company from description
+    const extractionPrompt = `Extract the job title and company name from this job description. If not explicitly stated, infer the most likely job title based on the requirements and description.
+
+JOB DESCRIPTION:
+${jobDescription}
+
+Respond in this exact format:
+Job Title: [extracted or inferred title]
+Company: [company name or "Not specified"]`;
+
+    const extractionResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'user', content: extractionPrompt }
+        ],
+      }),
+    });
+
+    let jobTitle = 'Position';
+    let companyName = '';
+    
+    if (extractionResponse.ok) {
+      const extractionData = await extractionResponse.json();
+      const extractedInfo = extractionData.choices[0].message.content;
+      
+      const titleMatch = extractedInfo.match(/Job Title:\s*(.+)/i);
+      const companyMatch = extractedInfo.match(/Company:\s*(.+)/i);
+      
+      if (titleMatch) jobTitle = titleMatch[1].trim();
+      if (companyMatch && !companyMatch[1].includes('Not specified')) {
+        companyName = companyMatch[1].trim();
+      }
+    }
+
+    console.log('Extracted job title:', jobTitle, 'Company:', companyName);
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -151,16 +195,23 @@ Generate a complete, ATS-optimized resume that matches this job description.`;
 
     console.log('ATS Score:', atsScore);
 
-    // Save job description
+    // Save job description with extracted info
     const { data: jobDesc } = await supabase
       .from('job_descriptions')
       .insert({
         user_id: user.id,
         description: jobDescription,
+        title: jobTitle,
+        company: companyName || null,
         keywords: uniqueKeywords.slice(0, 50),
       })
       .select()
       .single();
+
+    // Create resume title
+    const resumeTitle = companyName 
+      ? `${jobTitle} at ${companyName}`
+      : jobTitle;
 
     // Save generated resume
     const { data: resume, error: saveError } = await supabase
@@ -168,7 +219,7 @@ Generate a complete, ATS-optimized resume that matches this job description.`;
       .insert({
         user_id: user.id,
         job_description_id: jobDesc?.id,
-        title: `Resume - ${new Date().toLocaleDateString()}`,
+        title: resumeTitle,
         content: resumeContent,
         format: 'plain_text',
         ats_score: atsScore,
