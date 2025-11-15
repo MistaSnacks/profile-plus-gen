@@ -57,11 +57,13 @@ export default {
         "gradient-primary": "var(--gradient-primary)",
         "gradient-subtle": "var(--gradient-subtle)",
         "gradient-card": "var(--gradient-card)",
+        "gradient-hero": "var(--gradient-hero)",
       },
       boxShadow: {
         soft: "var(--shadow-soft)",
         medium: "var(--shadow-medium)",
         strong: "var(--shadow-strong)",
+        glow: "var(--shadow-glow)",
       },
       borderRadius: {
         lg: "var(--radius)",
