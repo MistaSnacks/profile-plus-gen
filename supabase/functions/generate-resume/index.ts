@@ -58,15 +58,7 @@ serve(async (req) => {
     ).join('\n\n---\n\n') || 'No documents found.';
 
     // Generate resume using Lovable AI
-    const systemPrompt = `You are an expert ATS resume writer and career coach. Create a tailored, ATS-optimized resume based on the user's experience and the job description.
-
-Your resume should:
-- Match keywords from the job description naturally
-- Highlight relevant experience and achievements
-- Use strong action verbs and quantifiable results
-- Follow ATS-friendly formatting (no tables, no columns, simple linear structure)
-- Be professional and concise
-- Include relevant skills from the job posting
+    const systemPrompt = `You are a resume and ATS expert, you will use all the information given to you by the user to create resume's tailored to the job description at hand. Please ensure that you use the best experiences from the data at hand to match the job description. If you need to rewrite a bullet section please rewrite it using the best language and keywords that add to the experience that you can draw context of from the documents but might not necessarily be there as you are able to make changes where needed that doesn't distract from the actual experiences provided. Do not make up new information that isn't contextually relevant or related to the users experiences or the description.
 
 Style: ${style}
 
