@@ -28,54 +28,28 @@ serve(async (req) => {
 
     const { message } = await req.json();
 
-    console.log('Generating embedding for user message:', message);
+    console.log('Fetching user documents...');
 
-    // Generate embedding for the user's question
-    const embeddingResponse = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: message,
-        model: 'text-embedding-3-small',
-      }),
-    });
+    // Fetch all user documents with extracted text
+    const { data: documents, error: docsError } = await supabaseClient
+      .from('documents')
+      .select('name, type, extracted_text')
+      .eq('user_id', user.id)
+      .not('extracted_text', 'is', null);
 
-    if (!embeddingResponse.ok) {
-      const errorText = await embeddingResponse.text();
-      console.error('Embedding API error:', errorText);
-      throw new Error('Failed to generate embedding');
+    if (docsError) {
+      console.error('Documents fetch error:', docsError);
+      throw docsError;
     }
 
-    const embeddingData = await embeddingResponse.json();
-    const queryEmbedding = embeddingData.data[0].embedding;
+    console.log('Found documents:', documents?.length || 0);
 
-    console.log('Searching for similar documents...');
-
-    // Search for similar document chunks using vector similarity
-    const { data: similarChunks, error: searchError } = await supabaseClient.rpc(
-      'match_document_chunks',
-      {
-        query_embedding: queryEmbedding,
-        match_threshold: 0.7,
-        match_count: 5,
-        filter_user_id: user.id,
-      }
-    );
-
-    if (searchError) {
-      console.error('Search error:', searchError);
-      throw searchError;
-    }
-
-    console.log('Found similar chunks:', similarChunks?.length || 0);
-
-    // Build context from similar chunks
-    const context = similarChunks && similarChunks.length > 0
-      ? similarChunks.map((chunk: any) => chunk.chunk_text).join('\n\n')
-      : 'No relevant documents found.';
+    // Build context from documents
+    const context = documents && documents.length > 0
+      ? documents.map((doc: any) => {
+          return `Document: ${doc.name} (${doc.type})\n${doc.extracted_text || 'No text extracted'}`;
+        }).join('\n\n---\n\n')
+      : 'No documents found. Please upload documents first.';
 
     // Generate response using Lovable AI
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -93,7 +67,7 @@ serve(async (req) => {
             Use the following context from their documents to answer their questions. 
             If the context doesn't contain relevant information, say so politely.
             
-            Context:
+            Context from user's documents:
             ${context}`,
           },
           {
