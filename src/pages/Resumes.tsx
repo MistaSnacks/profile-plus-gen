@@ -2,7 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -110,6 +111,52 @@ const Resumes = () => {
       title: "Resume downloaded",
       description: "Your resume has been downloaded successfully",
     });
+  };
+
+  const getInsights = (score: number) => {
+    const status = getScoreStatus(score);
+    
+    const insights = {
+      high: {
+        summary: "Excellent ATS compatibility!",
+        icon: CheckCircle,
+        color: "text-success",
+        recommendations: [
+          "Your resume is well-optimized for ATS systems",
+          "Consider adding more quantifiable achievements",
+          "Keep keywords relevant to target job descriptions",
+          "Maintain consistent formatting throughout"
+        ]
+      },
+      medium: {
+        summary: "Good ATS score with room for improvement",
+        icon: Target,
+        color: "text-warning",
+        recommendations: [
+          "Add more industry-specific keywords from job descriptions",
+          "Use standard section headings (Experience, Education, Skills)",
+          "Include more measurable results and achievements",
+          "Ensure consistent formatting and clear hierarchy",
+          "Add relevant technical skills and certifications"
+        ]
+      },
+      low: {
+        summary: "Needs significant optimization for ATS",
+        icon: AlertCircle,
+        color: "text-destructive",
+        recommendations: [
+          "Use standard resume section headings",
+          "Add keywords directly from target job descriptions",
+          "Include clear dates and job titles",
+          "List technical skills in a dedicated section",
+          "Use simple, ATS-friendly formatting",
+          "Add quantifiable achievements and metrics",
+          "Remove graphics, tables, or complex formatting"
+        ]
+      }
+    };
+
+    return insights[status];
   };
 
   if (loading) {
@@ -231,20 +278,80 @@ const Resumes = () => {
 
       {/* Preview Dialog */}
       <Dialog open={!!previewResume} onOpenChange={() => setPreviewResume(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogContent className="max-w-6xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>{previewResume?.title}</DialogTitle>
             <DialogDescription>
-              ATS Score: {previewResume?.ats_score}% • Generated {previewResume && formatDate(previewResume.created_at)}
+              Generated {previewResume && formatDate(previewResume.created_at)}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-            <div className="prose prose-sm max-w-none">
-              <pre className="whitespace-pre-wrap font-sans text-sm">
-                {previewResume?.content}
-              </pre>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[70vh]">
+            {/* Insights Panel */}
+            <div className="lg:col-span-1 space-y-4 overflow-y-auto">
+              {previewResume && (() => {
+                const insights = getInsights(previewResume.ats_score || 0);
+                const Icon = insights.icon;
+                const status = getScoreStatus(previewResume.ats_score || 0);
+                
+                return (
+                  <>
+                    {/* Score Card */}
+                    <Card className="p-4 bg-gradient-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">ATS Score</span>
+                        <Badge variant={status === "high" ? "default" : status === "medium" ? "secondary" : "destructive"}>
+                          {previewResume.ats_score}%
+                        </Badge>
+                      </div>
+                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-3">
+                        <div
+                          className={`h-full ${
+                            status === "high"
+                              ? "bg-success"
+                              : status === "medium"
+                              ? "bg-warning"
+                              : "bg-destructive"
+                          }`}
+                          style={{ width: `${previewResume.ats_score}%` }}
+                        />
+                      </div>
+                      <div className={`flex items-center gap-2 ${insights.color}`}>
+                        <Icon className="w-5 h-5" />
+                        <p className="text-sm font-medium">{insights.summary}</p>
+                      </div>
+                    </Card>
+
+                    {/* Recommendations Card */}
+                    <Card className="p-4 bg-gradient-card">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Sparkles className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-foreground">How to Improve</h3>
+                      </div>
+                      <ul className="space-y-2">
+                        {insights.recommendations.map((rec, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <span className="text-primary mt-1">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </Card>
+                  </>
+                );
+              })()}
             </div>
-          </ScrollArea>
+
+            {/* Resume Content */}
+            <ScrollArea className="lg:col-span-2 h-full rounded-md border p-4 bg-background">
+              <div className="prose prose-sm max-w-none">
+                <pre className="whitespace-pre-wrap font-sans text-sm text-foreground">
+                  {previewResume?.content}
+                </pre>
+              </div>
+            </ScrollArea>
+          </div>
+
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setPreviewResume(null)}>
               Close
