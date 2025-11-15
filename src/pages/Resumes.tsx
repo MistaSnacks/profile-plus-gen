@@ -3,13 +3,15 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target, ChevronDown } from "lucide-react";
+import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target, ChevronDown, Trash2, Edit2, Save, X } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +35,11 @@ const Resumes = () => {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [previewResume, setPreviewResume] = useState<Resume | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysis, setAnalysis] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -117,6 +124,115 @@ const Resumes = () => {
         description: "There was an error downloading your resume",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleEditTitle = (resume: Resume) => {
+    setEditingId(resume.id);
+    setEditingTitle(resume.title);
+  };
+
+  const handleSaveTitle = async (resumeId: string) => {
+    if (!editingTitle.trim()) {
+      toast({
+        title: "Error",
+        description: "Title cannot be empty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('generated_resumes')
+        .update({ title: editingTitle })
+        .eq('id', resumeId);
+
+      if (error) throw error;
+
+      setResumes(prev => prev.map(r => 
+        r.id === resumeId ? { ...r, title: editingTitle } : r
+      ));
+      
+      setEditingId(null);
+      toast({
+        title: "Title updated",
+        description: "Resume title has been updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating title:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update title",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingTitle("");
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      const { error } = await supabase
+        .from('generated_resumes')
+        .delete()
+        .eq('id', deleteId);
+
+      if (error) throw error;
+
+      setResumes(prev => prev.filter(r => r.id !== deleteId));
+      setDeleteId(null);
+      
+      if (previewResume?.id === deleteId) {
+        setPreviewResume(null);
+      }
+
+      toast({
+        title: "Resume deleted",
+        description: "Resume has been deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting resume:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete resume",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!previewResume) return;
+
+    setIsAnalyzing(true);
+    setAnalysis(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-resume', {
+        body: { resumeId: previewResume.id }
+      });
+
+      if (error) throw error;
+
+      setAnalysis(data.analysis);
+      toast({
+        title: "Analysis complete",
+        description: "AI has analyzed your resume against the job description",
+      });
+    } catch (error) {
+      console.error('Error analyzing resume:', error);
+      toast({
+        title: "Analysis failed",
+        description: "Failed to analyze resume",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -225,15 +341,58 @@ const Resumes = () => {
               return (
                 <Card key={resume.id} className="p-6 bg-card shadow-soft hover:shadow-medium transition-all">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 flex-1">
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <FileText className="w-6 h-6 text-primary" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground mb-1">{resume.title}</h3>
+                      <div className="flex-1">
+                        {editingId === resume.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={editingTitle}
+                              onChange={(e) => setEditingTitle(e.target.value)}
+                              className="h-8"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleSaveTitle(resume.id)}
+                            >
+                              <Save className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleCancelEdit}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-foreground">{resume.title}</h3>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleEditTitle(resume)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">Generated {formatDate(resume.created_at)}</p>
                       </div>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setDeleteId(resume.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
 
                   <div className="mb-4">
@@ -293,7 +452,10 @@ const Resumes = () => {
       </div>
 
       {/* Preview Dialog */}
-      <Dialog open={!!previewResume} onOpenChange={() => setPreviewResume(null)}>
+      <Dialog open={!!previewResume} onOpenChange={() => {
+        setPreviewResume(null);
+        setAnalysis(null);
+      }}>
         <DialogContent className="max-w-6xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>{previewResume?.title}</DialogTitle>
@@ -338,21 +500,60 @@ const Resumes = () => {
                       </div>
                     </Card>
 
+                    {/* AI Analysis Button */}
+                    <Button
+                      onClick={handleAnalyze}
+                      disabled={isAnalyzing}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      {isAnalyzing ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-2" />
+                          AI Analysis
+                        </>
+                      )}
+                    </Button>
+
+                    {/* AI Analysis Results */}
+                    {analysis && (
+                      <Card className="p-4 bg-gradient-card">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                          <h3 className="font-semibold text-foreground">AI Analysis</h3>
+                        </div>
+                        <ScrollArea className="h-[300px]">
+                          <div className="prose prose-sm max-w-none">
+                            <pre className="whitespace-pre-wrap font-sans text-xs text-muted-foreground">
+                              {analysis}
+                            </pre>
+                          </div>
+                        </ScrollArea>
+                      </Card>
+                    )}
+
                     {/* Recommendations Card */}
-                    <Card className="p-4 bg-gradient-card">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Sparkles className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold text-foreground">How to Improve</h3>
-                      </div>
-                      <ul className="space-y-2">
-                        {insights.recommendations.map((rec, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                            <span className="text-primary mt-1">•</span>
-                            <span>{rec}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </Card>
+                    {!analysis && (
+                      <Card className="p-4 bg-gradient-card">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Target className="w-5 h-5 text-primary" />
+                          <h3 className="font-semibold text-foreground">Quick Tips</h3>
+                        </div>
+                        <ul className="space-y-2">
+                          {insights.recommendations.map((rec, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                              <span className="text-primary mt-1">•</span>
+                              <span>{rec}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </Card>
+                    )}
                   </>
                 );
               })()}
@@ -369,7 +570,10 @@ const Resumes = () => {
           </div>
 
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setPreviewResume(null)}>
+            <Button variant="outline" onClick={() => {
+              setPreviewResume(null);
+              setAnalysis(null);
+            }}>
               Close
             </Button>
             <DropdownMenu>
@@ -392,6 +596,24 @@ const Resumes = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this resume. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
