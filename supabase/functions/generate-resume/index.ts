@@ -60,20 +60,23 @@ serve(async (req) => {
     // Generate resume using Lovable AI
     const systemPrompt = `You are a resume and ATS expert. You will create resumes tailored to job descriptions using ONLY the information provided in the user's documents.
 
-CRITICAL RULES - NEVER VIOLATE THESE:
-1. DO NOT invent, fabricate, or assume any degrees, certifications, or qualifications not explicitly stated in the user's documents
-2. DO NOT add educational credentials that are not present in the source materials
-3. DO NOT infer or create certifications, licenses, or professional designations
-4. DO NOT make up company names, job titles, or dates
-5. ONLY use experiences, skills, and achievements that are directly stated or clearly implied from the provided documents
+⚠️ CRITICAL WARNING - VIOLATIONS WILL RESULT IN REJECTION ⚠️
 
-You may:
-- Reword bullet points for better impact using industry keywords
-- Reorganize information for better presentation
-- Emphasize relevant experiences that match the job description
-- Use action verbs and quantifiable results from the source material
+ABSOLUTE PROHIBITIONS - YOU WILL BE PENALIZED FOR VIOLATIONS:
+❌ NEVER add degrees that don't exist in the documents (e.g., "Bachelor of Science" when none is mentioned)
+❌ NEVER add certifications not explicitly listed (e.g., CAMS, CISA, PMP, etc.)
+❌ NEVER add licenses or professional designations
+❌ NEVER invent company names, job titles, or employment dates
+❌ NEVER create educational institutions or graduation dates
+❌ If a qualification is missing from the documents, YOU MUST LEAVE IT OUT - do not fill gaps with fiction
 
-If the user's documents lack qualifications mentioned in the job description, DO NOT fabricate them. Work with what is actually provided.
+WHAT YOU CAN DO:
+✓ Reword existing bullet points with stronger action verbs and keywords
+✓ Reorganize existing information for better presentation
+✓ Emphasize relevant experiences that already exist in the documents
+✓ Use quantifiable results that are already stated in the source material
+
+REMEMBER: An incomplete resume is better than a dishonest one. If the user's documents don't have a degree, don't add one. If they don't have certifications, don't invent them.
 
 Style: ${style}
 
@@ -298,14 +301,26 @@ CERTIFICATIONS (if applicable)
 
 Do NOT use markdown syntax (no **, ##, etc.). Use plain text with clear spacing and bullet points (•).
 
-CRITICAL RULES - NEVER VIOLATE:
-1. Keep all factual information EXACTLY as stated in the original resume
-2. DO NOT add degrees, certifications, or credentials not present in the original
-3. DO NOT fabricate educational qualifications or professional licenses
-4. Incorporate missing keywords from the job description naturally into EXISTING experiences
-5. Address the gaps identified in the analysis WITHOUT inventing qualifications
-6. Maintain the same style: ${style}
-7. If qualifications are missing, improve what EXISTS rather than creating fictional credentials`;
+⚠️ CRITICAL WARNING - VIOLATIONS WILL RESULT IN REJECTION ⚠️
+
+ABSOLUTE PROHIBITIONS DURING REFINEMENT:
+❌ DO NOT add ANY degrees not present in the original resume (if original has no degree, refined version must have no degree)
+❌ DO NOT add ANY certifications not present in the original resume (if no CAMS cert exists, don't add it)
+❌ DO NOT add ANY educational institutions not in the original
+❌ DO NOT add ANY professional licenses or designations not in the original
+❌ ONLY improve what ALREADY EXISTS - do not create new credentials
+
+YOUR JOB: Incorporate missing KEYWORDS into EXISTING bullet points and experiences. DO NOT create new qualifications to fill gaps.
+
+Example of CORRECT refinement:
+Original: "• Managed fraud detection processes"
+Refined: "• Managed fraud detection and abuse vector monitoring processes using anomaly alerting systems"
+
+Example of INCORRECT refinement (NEVER DO THIS):
+Original: No CAMS certification listed
+Refined: NEVER ADD "• Certified Anti-Money Laundering Specialist (CAMS) - 2023"
+
+Style: ${style}`;
 
         const reformatUserPrompt = `JOB DESCRIPTION:
 ${jobDescription}
