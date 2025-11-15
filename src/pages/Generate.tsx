@@ -2,17 +2,27 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, Sparkles, FileText, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Navigation } from "@/components/Navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Generate = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [jobDescription, setJobDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showResults, setShowResults] = useState(false);
 
-  const handleGenerate = () => {
+  useEffect(() => {
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, navigate]);
+
+  const handleGenerate = async () => {
     if (!jobDescription.trim()) {
       toast({
         title: "Job description required",
@@ -23,21 +33,33 @@ const Generate = () => {
     }
 
     setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setShowResults(true);
-      toast({
-        title: "Resumes generated!",
-        description: "3 tailored resume options are ready for review",
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-resume", {
+        body: { jobDescription },
       });
-    }, 2000);
+
+      if (error) throw error;
+
+      toast({
+        title: "Resume generated!",
+        description: `Your resume has been created with an ATS score of ${data.atsScore}%`,
+      });
+      
+      // Navigate to resumes page to see the generated resume
+      navigate("/resumes");
+    } catch (error) {
+      console.error("Generation error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate resume. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const resumeOptions = [
-    { title: "Executive Format", score: 96, description: "Emphasizes leadership and strategic achievements" },
-    { title: "Technical Focus", score: 94, description: "Highlights technical skills and project experience" },
-    { title: "Balanced Approach", score: 92, description: "Equal emphasis on technical and soft skills" },
-  ];
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -80,36 +102,6 @@ const Generate = () => {
               </div>
             </Card>
 
-            {showResults && (
-              <Card className="p-6 bg-card shadow-soft">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Generated Options</h3>
-                <div className="space-y-4">
-                  {resumeOptions.map((option, i) => (
-                    <div key={i} className="p-4 rounded-lg border border-border bg-gradient-card hover:shadow-soft transition-all">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-foreground">{option.title}</h4>
-                            <p className="text-sm text-muted-foreground">{option.description}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-success/10">
-                          <TrendingUp className="w-4 h-4 text-success" />
-                          <span className="text-sm font-semibold text-success">{option.score}%</span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 mt-3">
-                        <Button size="sm" variant="outline" className="flex-1">Preview</Button>
-                        <Button size="sm" className="flex-1 bg-primary">Download</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
           </div>
 
           <div className="space-y-6">
