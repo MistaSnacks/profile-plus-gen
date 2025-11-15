@@ -172,20 +172,169 @@ Company: [company name or "Not specified"]`;
     }
 
     const aiData = await aiResponse.json();
-    const resumeContent = aiData.choices[0].message.content;
+    let resumeContent = aiData.choices[0].message.content;
 
-    console.log('Generated resume length:', resumeContent.length);
+    console.log('Generated initial resume length:', resumeContent.length);
 
     // Calculate simple ATS score based on keyword matching
-    const jobKeywords = jobDescription.toLowerCase()
-      .split(/\W+/)
-      .filter((word: string) => word.length > 3);
-    const uniqueKeywords = [...new Set(jobKeywords)];
-    const resumeLower = resumeContent.toLowerCase();
-    const matchedKeywords = uniqueKeywords.filter(kw => resumeLower.includes(kw));
-    const atsScore = Math.min(100, Math.round((matchedKeywords.length / uniqueKeywords.length) * 100));
+    const calculateATSScore = (content: string) => {
+      const jobKeywords: string[] = jobDescription.toLowerCase()
+        .split(/\W+/)
+        .filter((word: string) => word.length > 3);
+      const uniqueKeywords: string[] = [...new Set(jobKeywords)];
+      const contentLower = content.toLowerCase();
+      const matchedKeywords = uniqueKeywords.filter((kw: string) => contentLower.includes(kw));
+      return {
+        score: Math.min(100, Math.round((matchedKeywords.length / uniqueKeywords.length) * 100)),
+        matchedKeywords,
+        uniqueKeywords
+      };
+    };
 
-    console.log('ATS Score:', atsScore);
+    let { score: atsScore, matchedKeywords, uniqueKeywords } = calculateATSScore(resumeContent);
+    console.log('Initial ATS Score:', atsScore);
+
+    // Multi-pass refinement: if score is below 75%, analyze and refine
+    if (atsScore < 75) {
+      console.log('ATS score below 75%, starting analysis and refinement...');
+      
+      // Step 1: Analyze the resume
+      const analysisPrompt = `You are an ATS (Applicant Tracking System) expert. Analyze this resume against the job description and provide detailed feedback.
+
+JOB DESCRIPTION:
+${jobDescription}
+
+RESUME:
+${resumeContent}
+
+Provide your analysis in the following format:
+
+KEYWORD MATCH SCORE: [0-100]
+Explanation of score
+
+STRENGTHS:
+• [Strength 1]
+• [Strength 2]
+• [Strength 3]
+
+GAPS:
+• [Gap 1 - what's missing]
+• [Gap 2 - what's missing]
+• [Gap 3 - what's missing]
+
+RECOMMENDATIONS:
+• [Specific actionable recommendation 1]
+• [Specific actionable recommendation 2]
+• [Specific actionable recommendation 3]
+
+Focus on:
+- Keywords and phrases from the job description
+- Required skills and qualifications
+- Experience level alignment
+- ATS compatibility issues`;
+
+      const analysisResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'user', content: analysisPrompt }
+          ],
+        }),
+      });
+
+      if (analysisResponse.ok) {
+        const analysisData = await analysisResponse.json();
+        const analysis = analysisData.choices[0].message.content;
+        console.log('Analysis complete, refining resume...');
+
+        // Step 2: Reformat based on analysis
+        const reformatSystemPrompt = `You are a resume and ATS expert. Your task is to rewrite the resume to address the analysis feedback and improve the ATS score.
+
+CRITICAL: Format the resume as ATS-friendly PLAIN TEXT with clear section headers. Use the following structure:
+
+[FULL NAME]
+[Email] | [Phone] | [LinkedIn] | [Portfolio]
+
+PROFESSIONAL SUMMARY
+[2-3 sentences highlighting key qualifications]
+
+SKILLS
+- [Skill category]: [comma-separated skills]
+- [Another category]: [skills]
+
+PROFESSIONAL EXPERIENCE
+[Job Title] | [Company Name]
+[Start Date] - [End Date]
+• [Achievement with quantifiable result]
+• [Achievement with quantifiable result]
+• [Achievement with quantifiable result]
+
+EDUCATION
+[Degree] in [Field] | [Institution]
+[Graduation Date]
+
+CERTIFICATIONS (if applicable)
+• [Certification Name] - [Issuing Organization] ([Year])
+
+Do NOT use markdown syntax (no **, ##, etc.). Use plain text with clear spacing and bullet points (•).
+
+IMPORTANT:
+- Keep all factual information from the original resume
+- Incorporate missing keywords from the job description naturally
+- Address the gaps identified in the analysis
+- Maintain the same style: ${style}
+- Do not invent new experiences or qualifications`;
+
+        const reformatUserPrompt = `JOB DESCRIPTION:
+${jobDescription}
+
+ORIGINAL RESUME:
+${resumeContent}
+
+ANALYSIS AND FEEDBACK:
+${analysis}
+
+Rewrite the resume to incorporate the recommendations and improve ATS compatibility while maintaining accuracy.`;
+
+        const reformatResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lovableApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [
+              { role: 'system', content: reformatSystemPrompt },
+              { role: 'user', content: reformatUserPrompt }
+            ],
+          }),
+        });
+
+        if (reformatResponse.ok) {
+          const reformatData = await reformatResponse.json();
+          const refinedContent = reformatData.choices[0].message.content;
+          
+          // Recalculate ATS score for refined version
+          const refinedResult = calculateATSScore(refinedContent);
+          
+          console.log('Refined ATS Score:', refinedResult.score, '(improved from', atsScore, ')');
+          
+          // Use refined version
+          resumeContent = refinedContent;
+          atsScore = refinedResult.score;
+          matchedKeywords = refinedResult.matchedKeywords;
+          uniqueKeywords = refinedResult.uniqueKeywords;
+        }
+      }
+    }
+
+    console.log('Final ATS Score:', atsScore);
 
     // Save job description with extracted info
     const { data: jobDesc } = await supabase
