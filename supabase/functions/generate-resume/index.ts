@@ -212,9 +212,8 @@ Company: [company name or "Not specified"]`;
     let { score: atsScore, matchedKeywords, uniqueKeywords } = calculateATSScore(resumeContent);
     console.log('Initial ATS Score:', atsScore);
 
-    // Multi-pass refinement: if score is below 75%, analyze and refine
-    if (atsScore < 75) {
-      console.log('ATS score below 75%, starting analysis and refinement...');
+    // ALWAYS run multi-pass refinement with full analysis-reformat workflow
+    console.log('Starting analysis and refinement workflow...');
       
       // Step 1: Analyze the resume
       const analysisPrompt = `You are an ATS (Applicant Tracking System) expert. Analyze this resume against the job description and provide detailed feedback.
@@ -364,7 +363,6 @@ Rewrite the resume to incorporate the recommendations and improve ATS compatibil
           uniqueKeywords = refinedResult.uniqueKeywords;
         }
       }
-    }
 
     console.log('Final ATS Score:', atsScore);
 
