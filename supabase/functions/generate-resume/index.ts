@@ -64,13 +64,39 @@ Your resume should:
 - Match keywords from the job description naturally
 - Highlight relevant experience and achievements
 - Use strong action verbs and quantifiable results
-- Follow ATS-friendly formatting (no tables, simple structure)
+- Follow ATS-friendly formatting (no tables, no columns, simple linear structure)
 - Be professional and concise
 - Include relevant skills from the job posting
 
 Style: ${style}
 
-Format the resume in clean markdown with clear sections.`;
+CRITICAL: Format the resume as ATS-friendly PLAIN TEXT with clear section headers. Use the following structure:
+
+[FULL NAME]
+[Email] | [Phone] | [LinkedIn] | [Portfolio]
+
+PROFESSIONAL SUMMARY
+[2-3 sentences highlighting key qualifications]
+
+SKILLS
+- [Skill category]: [comma-separated skills]
+- [Another category]: [skills]
+
+PROFESSIONAL EXPERIENCE
+[Job Title] | [Company Name]
+[Start Date] - [End Date]
+• [Achievement with quantifiable result]
+• [Achievement with quantifiable result]
+• [Achievement with quantifiable result]
+
+EDUCATION
+[Degree] in [Field] | [Institution]
+[Graduation Date]
+
+CERTIFICATIONS (if applicable)
+• [Certification Name] - [Issuing Organization] ([Year])
+
+Do NOT use markdown syntax (no **, ##, etc.). Use plain text with clear spacing and bullet points (•).`;
 
     const userPrompt = `Create a tailored resume for this job posting:
 
@@ -144,7 +170,7 @@ Generate a complete, ATS-optimized resume that matches this job description.`;
         job_description_id: jobDesc?.id,
         title: `Resume - ${new Date().toLocaleDateString()}`,
         content: resumeContent,
-        format: 'markdown',
+        format: 'plain_text',
         ats_score: atsScore,
         style: style,
         metadata: {

@@ -3,13 +3,20 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target, ChevronDown } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { exportToPDF, exportToDOCX } from "@/utils/resumeExport";
 
 interface Resume {
   id: string;
@@ -91,26 +98,26 @@ const Resumes = () => {
     setPreviewResume(resume);
   };
 
-  const handleDownload = (resume: Resume) => {
-    // Create a blob with the resume content
-    const blob = new Blob([resume.content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    
-    // Create a temporary link and trigger download
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${resume.title.replace(/[^a-z0-9]/gi, '_')}.md`;
-    document.body.appendChild(link);
-    link.click();
-    
-    // Cleanup
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Resume downloaded",
-      description: "Your resume has been downloaded successfully",
-    });
+  const handleDownload = (resume: Resume, format: 'pdf' | 'docx') => {
+    try {
+      if (format === 'pdf') {
+        exportToPDF(resume);
+      } else {
+        exportToDOCX(resume);
+      }
+      
+      toast({
+        title: "Resume downloaded",
+        description: `Your resume has been downloaded as ${format.toUpperCase()}`,
+      });
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "Download failed",
+        description: "There was an error downloading your resume",
+        variant: "destructive",
+      });
+    }
   };
 
   const getInsights = (score: number) => {
@@ -260,14 +267,23 @@ const Resumes = () => {
                       <Eye className="w-4 h-4 mr-2" />
                       Preview
                     </Button>
-                    <Button 
-                      variant="default" 
-                      className="flex-1"
-                      onClick={() => handleDownload(resume)}
-                    >
-                      <Download className="w-4 h-4 mr-2" />
-                      Download
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="default" className="flex-1">
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
+                          <ChevronDown className="w-4 h-4 ml-2" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'pdf')}>
+                          Download as PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'docx')}>
+                          Download as DOCX
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </Card>
               );
@@ -356,10 +372,23 @@ const Resumes = () => {
             <Button variant="outline" onClick={() => setPreviewResume(null)}>
               Close
             </Button>
-            <Button onClick={() => previewResume && handleDownload(previewResume)}>
-              <Download className="w-4 h-4 mr-2" />
-              Download
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => previewResume && handleDownload(previewResume, 'pdf')}>
+                  Download as PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => previewResume && handleDownload(previewResume, 'docx')}>
+                  Download as DOCX
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </DialogContent>
       </Dialog>
