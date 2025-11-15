@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target, ChevronDown, Trash2, Edit2, Save, X } from "lucide-react";
+import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target, ChevronDown, Trash2, Edit2, Save, X, Check } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +40,9 @@ const Resumes = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<string | null>(null);
+  const [isReformatting, setIsReformatting] = useState(false);
+  const [reformattedResume, setReformattedResume] = useState<{content: string, atsScore: number} | null>(null);
+  const [showComparison, setShowComparison] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -211,6 +214,8 @@ const Resumes = () => {
 
     setIsAnalyzing(true);
     setAnalysis(null);
+    setReformattedResume(null);
+    setShowComparison(false);
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze-resume', {
@@ -221,18 +226,97 @@ const Resumes = () => {
 
       setAnalysis(data.analysis);
       toast({
-        title: "Analysis complete",
-        description: "AI has analyzed your resume against the job description",
+        title: "Analysis Complete",
+        description: "AI insights generated successfully.",
       });
     } catch (error) {
       console.error('Error analyzing resume:', error);
       toast({
-        title: "Analysis failed",
-        description: "Failed to analyze resume",
+        title: "Error",
+        description: "Failed to generate analysis",
         variant: "destructive",
       });
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleReformat = async () => {
+    if (!previewResume || !analysis) {
+      toast({
+        title: "No Analysis",
+        description: "Please generate AI analysis first before reformatting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsReformatting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('reformat-resume', {
+        body: { resumeId: previewResume.id, analysis }
+      });
+
+      if (error) throw error;
+
+      setReformattedResume({
+        content: data.content,
+        atsScore: data.atsScore
+      });
+      setShowComparison(true);
+      toast({
+        title: "Reformat Complete",
+        description: "Resume has been reformatted based on AI suggestions.",
+      });
+    } catch (error) {
+      console.error('Error reformatting resume:', error);
+      toast({
+        title: "Reformat Failed",
+        description: "Failed to reformat resume. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsReformatting(false);
+    }
+  };
+
+  const handleSaveReformatted = async () => {
+    if (!previewResume || !reformattedResume) return;
+
+    try {
+      const { error } = await supabase
+        .from('generated_resumes')
+        .update({
+          content: reformattedResume.content,
+          ats_score: reformattedResume.atsScore
+        })
+        .eq('id', previewResume.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setResumes(resumes.map(r => 
+        r.id === previewResume.id 
+          ? { ...r, content: reformattedResume.content, ats_score: reformattedResume.atsScore }
+          : r
+      ));
+
+      toast({
+        title: "Resume Updated",
+        description: "Your resume has been updated with the reformatted version.",
+      });
+
+      setPreviewResume(null);
+      setReformattedResume(null);
+      setShowComparison(false);
+      setAnalysis(null);
+    } catch (error) {
+      console.error('Error saving reformatted resume:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save the reformatted resume.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -455,10 +539,24 @@ const Resumes = () => {
       <Dialog open={!!previewResume} onOpenChange={() => {
         setPreviewResume(null);
         setAnalysis(null);
+        setReformattedResume(null);
+        setShowComparison(false);
       }}>
         <DialogContent className="max-w-6xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>{previewResume?.title}</DialogTitle>
+            <DialogTitle className="flex items-center justify-between flex-wrap gap-2">
+              <span>{previewResume?.title}</span>
+              <div className="flex items-center gap-2">
+                <Badge variant={previewResume && getScoreStatus(previewResume.ats_score || 0) === "high" ? "default" : previewResume && getScoreStatus(previewResume.ats_score || 0) === "medium" ? "secondary" : "destructive"}>
+                  Original: {previewResume?.ats_score}%
+                </Badge>
+                {reformattedResume && (
+                  <Badge variant={getScoreStatus(reformattedResume.atsScore) === "high" ? "default" : getScoreStatus(reformattedResume.atsScore) === "medium" ? "secondary" : "destructive"}>
+                    New: {reformattedResume.atsScore}%
+                  </Badge>
+                )}
+              </div>
+            </DialogTitle>
             <DialogDescription>
               Generated {previewResume && formatDate(previewResume.created_at)}
             </DialogDescription>
@@ -534,6 +632,25 @@ const Resumes = () => {
                             </pre>
                           </div>
                         </ScrollArea>
+                        {!showComparison && (
+                          <Button
+                            onClick={handleReformat}
+                            disabled={isReformatting}
+                            className="w-full mt-3"
+                          >
+                            {isReformatting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Reformatting...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="w-4 h-4 mr-2" />
+                                Apply Suggestions & Reformat
+                              </>
+                            )}
+                          </Button>
+                        )}
                       </Card>
                     )}
 
@@ -560,39 +677,110 @@ const Resumes = () => {
             </div>
 
             {/* Resume Content */}
-            <ScrollArea className="lg:col-span-2 h-full rounded-md border p-4 bg-background">
-              <div className="prose prose-sm max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-sm text-foreground">
-                  {previewResume?.content}
-                </pre>
+            {showComparison && reformattedResume ? (
+              <div className="lg:col-span-2 grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold">Original</h4>
+                    <Badge variant="outline">{previewResume?.ats_score}%</Badge>
+                  </div>
+                  <ScrollArea className="h-[calc(70vh-2rem)] rounded-md border p-4 bg-background">
+                    <pre className="whitespace-pre-wrap font-sans text-xs text-foreground">
+                      {previewResume?.content}
+                    </pre>
+                  </ScrollArea>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-semibold">Reformatted</h4>
+                    <Badge variant="default">
+                      {reformattedResume.atsScore}%
+                      {reformattedResume.atsScore > (previewResume?.ats_score || 0) && (
+                        <span className="ml-1">
+                          +{reformattedResume.atsScore - (previewResume?.ats_score || 0)}
+                        </span>
+                      )}
+                    </Badge>
+                  </div>
+                  <ScrollArea className="h-[calc(70vh-2rem)] rounded-md border p-4 bg-muted/30">
+                    <pre className="whitespace-pre-wrap font-sans text-xs text-foreground">
+                      {reformattedResume.content}
+                    </pre>
+                  </ScrollArea>
+                </div>
               </div>
-            </ScrollArea>
+            ) : (
+              <ScrollArea className="lg:col-span-2 h-full rounded-md border p-4 bg-background">
+                <div className="prose prose-sm max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-sm text-foreground">
+                    {previewResume?.content}
+                  </pre>
+                </div>
+              </ScrollArea>
+            )}
           </div>
 
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => {
-              setPreviewResume(null);
-              setAnalysis(null);
-            }}>
-              Close
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button>
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                  <ChevronDown className="w-4 h-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => previewResume && handleDownload(previewResume, 'pdf')}>
-                  Download as PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => previewResume && handleDownload(previewResume, 'docx')}>
-                  Download as DOCX
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex gap-2 justify-between">
+            <div className="flex gap-2">
+              {showComparison && (
+                <>
+                  <Button onClick={handleSaveReformatted}>
+                    <Save className="w-4 h-4 mr-2" />
+                    Save Reformatted Version
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowComparison(false);
+                      setReformattedResume(null);
+                    }}
+                  >
+                    Keep Original
+                  </Button>
+                </>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => {
+                setPreviewResume(null);
+                setAnalysis(null);
+                setReformattedResume(null);
+                setShowComparison(false);
+              }}>
+                Close
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button>
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                    <ChevronDown className="w-4 h-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => {
+                    if (previewResume) {
+                      const resume = showComparison && reformattedResume
+                        ? { ...previewResume, content: reformattedResume.content, ats_score: reformattedResume.atsScore }
+                        : previewResume;
+                      handleDownload(resume, 'pdf');
+                    }
+                  }}>
+                    Download as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => {
+                    if (previewResume) {
+                      const resume = showComparison && reformattedResume
+                        ? { ...previewResume, content: reformattedResume.content, ats_score: reformattedResume.atsScore }
+                        : previewResume;
+                      handleDownload(resume, 'docx');
+                    }
+                  }}>
+                    Download as DOCX
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
