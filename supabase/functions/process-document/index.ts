@@ -82,59 +82,12 @@ serve(async (req) => {
       throw new Error(`Failed to update document: ${updateError.message}`);
     }
 
-    // Chunk text for embeddings (split into ~500 char chunks)
-    const chunkSize = 500;
-    const chunks: string[] = [];
-    for (let i = 0; i < text.length; i += chunkSize) {
-      chunks.push(text.slice(i, i + chunkSize));
-    }
-
-    console.log('Created', chunks.length, 'chunks');
-
-    // Generate embeddings for each chunk using Lovable AI
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      
-      // Call Lovable AI to generate embeddings
-      const embeddingResponse = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'text-embedding-3-small',
-          input: chunk,
-        }),
-      });
-
-      if (!embeddingResponse.ok) {
-        console.error('Failed to generate embedding for chunk', i);
-        continue;
-      }
-
-      const embeddingData = await embeddingResponse.json();
-      const embedding = embeddingData.data[0].embedding;
-
-      // Store embedding in database
-      const { error: embeddingError } = await supabase
-        .from('document_embeddings')
-        .insert({
-          document_id: documentId,
-          chunk_text: chunk,
-          chunk_index: i,
-          embedding: embedding,
-        });
-
-      if (embeddingError) {
-        console.error('Failed to store embedding:', embeddingError);
-      }
-    }
+    console.log('Document processed successfully');
 
     console.log('Document processing complete');
 
     return new Response(
-      JSON.stringify({ success: true, chunks: chunks.length }),
+      JSON.stringify({ success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
