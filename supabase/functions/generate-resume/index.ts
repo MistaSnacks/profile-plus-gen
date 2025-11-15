@@ -52,49 +52,10 @@ serve(async (req) => {
 
     console.log('Found', documents?.length || 0, 'documents');
 
-    // Generate embedding for job description
-    const jobEmbeddingResponse = await fetch('https://ai.gateway.lovable.dev/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'text-embedding-3-small',
-        input: jobDescription,
-      }),
-    });
-
-    if (!jobEmbeddingResponse.ok) {
-      throw new Error('Failed to generate job description embedding');
-    }
-
-    const jobEmbeddingData = await jobEmbeddingResponse.json();
-    const jobEmbedding = jobEmbeddingData.data[0].embedding;
-
-    // Find most relevant document chunks using vector similarity
-    const { data: relevantChunks } = await supabase.rpc('match_document_chunks', {
-      query_embedding: jobEmbedding,
-      match_threshold: 0.7,
-      match_count: 10,
-    }).then(res => {
-      // If RPC doesn't exist yet, fall back to getting all embeddings
-      if (res.error) {
-        return supabase
-          .from('document_embeddings')
-          .select('chunk_text, document_id')
-          .limit(10);
-      }
-      return res;
-    });
-
-    console.log('Found', relevantChunks?.length || 0, 'relevant chunks');
-
-    // Combine relevant information
-    const contextText = relevantChunks?.map(chunk => chunk.chunk_text).join('\n\n') || '';
+    // Combine all document information as context
     const documentsText = documents?.map(doc => 
-      `${doc.name} (${doc.type}):\n${doc.extracted_text?.substring(0, 1000) || ''}`
-    ).join('\n\n---\n\n') || '';
+      `${doc.name} (${doc.type}):\n${doc.extracted_text || '[No text extracted]'}`
+    ).join('\n\n---\n\n') || 'No documents found.';
 
     // Generate resume using Lovable AI
     const systemPrompt = `You are an expert ATS resume writer and career coach. Create a tailored, ATS-optimized resume based on the user's experience and the job description.
@@ -122,10 +83,7 @@ Email: ${profile?.email || ''}
 LinkedIn: ${profile?.linkedin_url || ''}
 Portfolio: ${profile?.portfolio_url || ''}
 
-RELEVANT EXPERIENCE (from RAG):
-${contextText}
-
-ALL USER DOCUMENTS:
+USER'S DOCUMENTS AND EXPERIENCE:
 ${documentsText}
 
 Generate a complete, ATS-optimized resume that matches this job description.`;
@@ -142,7 +100,6 @@ Generate a complete, ATS-optimized resume that matches this job description.`;
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
       }),
     });
 
