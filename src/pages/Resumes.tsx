@@ -17,19 +17,21 @@ interface Resume {
 }
 
 const Resumes = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate("/auth");
       return;
     }
-    fetchResumes();
-  }, [user, navigate]);
+    if (user) {
+      fetchResumes();
+    }
+  }, [user, loading, navigate]);
 
   const fetchResumes = async () => {
     try {
@@ -80,6 +82,14 @@ const Resumes = () => {
     const now = new Date();
     return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   }).length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
