@@ -61,7 +61,7 @@ const Index = () => {
                 transition={{ delay: 0.3 }}
                 className="text-5xl lg:text-7xl font-bold text-foreground leading-tight"
               >
-                T<span className="text-primary">AI</span>lor Your Resume to{" "}
+                T<span className="text-primary">AI</span>LOR Your Resume to{" "}
                 <span className="bg-gradient-hero bg-clip-text text-transparent">Every Job</span>
               </motion.h1>
 
@@ -184,7 +184,7 @@ const Index = () => {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-4">
-              Why Choose <span className="text-primary">TAIlor</span>?
+              Why Choose <span className="text-primary">TAILOR</span>?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Powerful features designed to help you stand out from the competition
@@ -257,7 +257,7 @@ const Index = () => {
               Ready to Land Your Dream Job?
             </h2>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join thousands of job seekers who have improved their resumes with TAIlor
+              Join thousands of job seekers who have improved their resumes with TAILOR
             </p>
             <Button
               size="lg"
