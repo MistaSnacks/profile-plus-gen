@@ -1,5 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { useEffect, useState } from "react";
@@ -22,6 +24,7 @@ const Resumes = () => {
   const { toast } = useToast();
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewResume, setPreviewResume] = useState<Resume | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -82,6 +85,32 @@ const Resumes = () => {
     const now = new Date();
     return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   }).length;
+
+  const handlePreview = (resume: Resume) => {
+    setPreviewResume(resume);
+  };
+
+  const handleDownload = (resume: Resume) => {
+    // Create a blob with the resume content
+    const blob = new Blob([resume.content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    
+    // Create a temporary link and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${resume.title.replace(/[^a-z0-9]/gi, '_')}.md`;
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Resume downloaded",
+      description: "Your resume has been downloaded successfully",
+    });
+  };
 
   if (loading) {
     return (
@@ -176,11 +205,19 @@ const Resumes = () => {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1">
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => handlePreview(resume)}
+                    >
                       <Eye className="w-4 h-4 mr-2" />
                       Preview
                     </Button>
-                    <Button variant="default" className="flex-1">
+                    <Button 
+                      variant="default" 
+                      className="flex-1"
+                      onClick={() => handleDownload(resume)}
+                    >
                       <Download className="w-4 h-4 mr-2" />
                       Download
                     </Button>
@@ -191,6 +228,34 @@ const Resumes = () => {
           </div>
         )}
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewResume} onOpenChange={() => setPreviewResume(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{previewResume?.title}</DialogTitle>
+            <DialogDescription>
+              ATS Score: {previewResume?.ats_score}% • Generated {previewResume && formatDate(previewResume.created_at)}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
+            <div className="prose prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap font-sans text-sm">
+                {previewResume?.content}
+              </pre>
+            </div>
+          </ScrollArea>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setPreviewResume(null)}>
+              Close
+            </Button>
+            <Button onClick={() => previewResume && handleDownload(previewResume)}>
+              <Download className="w-4 h-4 mr-2" />
+              Download
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
