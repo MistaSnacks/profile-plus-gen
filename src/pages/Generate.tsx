@@ -11,16 +11,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Generate = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [jobDescription, setJobDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!loading && !user) {
       navigate("/auth");
     }
-  }, [user, navigate]);
+  }, [user, loading, navigate]);
 
   const handleGenerate = async () => {
     if (!jobDescription.trim()) {
@@ -58,6 +58,14 @@ const Generate = () => {
       setIsGenerating(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle flex items-center justify-center">
+        <Sparkles className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
