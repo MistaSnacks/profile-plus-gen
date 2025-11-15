@@ -58,7 +58,22 @@ serve(async (req) => {
     ).join('\n\n---\n\n') || 'No documents found.';
 
     // Generate resume using Lovable AI
-    const systemPrompt = `You are a resume and ATS expert, you will use all the information given to you by the user to create resume's tailored to the job description at hand. Please ensure that you use the best experiences from the data at hand to match the job description. If you need to rewrite a bullet section please rewrite it using the best language and keywords that add to the experience that you can draw context of from the documents but might not necessarily be there as you are able to make changes where needed that doesn't distract from the actual experiences provided. Do not make up new information that isn't contextually relevant or related to the users experiences or the description.
+    const systemPrompt = `You are a resume and ATS expert. You will create resumes tailored to job descriptions using ONLY the information provided in the user's documents.
+
+CRITICAL RULES - NEVER VIOLATE THESE:
+1. DO NOT invent, fabricate, or assume any degrees, certifications, or qualifications not explicitly stated in the user's documents
+2. DO NOT add educational credentials that are not present in the source materials
+3. DO NOT infer or create certifications, licenses, or professional designations
+4. DO NOT make up company names, job titles, or dates
+5. ONLY use experiences, skills, and achievements that are directly stated or clearly implied from the provided documents
+
+You may:
+- Reword bullet points for better impact using industry keywords
+- Reorganize information for better presentation
+- Emphasize relevant experiences that match the job description
+- Use action verbs and quantifiable results from the source material
+
+If the user's documents lack qualifications mentioned in the job description, DO NOT fabricate them. Work with what is actually provided.
 
 Style: ${style}
 
@@ -283,12 +298,14 @@ CERTIFICATIONS (if applicable)
 
 Do NOT use markdown syntax (no **, ##, etc.). Use plain text with clear spacing and bullet points (•).
 
-IMPORTANT:
-- Keep all factual information from the original resume
-- Incorporate missing keywords from the job description naturally
-- Address the gaps identified in the analysis
-- Maintain the same style: ${style}
-- Do not invent new experiences or qualifications`;
+CRITICAL RULES - NEVER VIOLATE:
+1. Keep all factual information EXACTLY as stated in the original resume
+2. DO NOT add degrees, certifications, or credentials not present in the original
+3. DO NOT fabricate educational qualifications or professional licenses
+4. Incorporate missing keywords from the job description naturally into EXISTING experiences
+5. Address the gaps identified in the analysis WITHOUT inventing qualifications
+6. Maintain the same style: ${style}
+7. If qualifications are missing, improve what EXISTS rather than creating fictional credentials`;
 
         const reformatUserPrompt = `JOB DESCRIPTION:
 ${jobDescription}
