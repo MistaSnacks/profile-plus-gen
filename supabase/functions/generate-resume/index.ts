@@ -93,6 +93,11 @@ SKILLS
 - [Another category]: [skills]
 
 PROFESSIONAL EXPERIENCE
+⚠️ CRITICAL: Be highly selective! Only include the 3-5 MOST RELEVANT positions for this specific job.
+- Prioritize recent roles that match the job requirements
+- Skip older or irrelevant positions entirely
+- Focus on quality over quantity - better to have 3 perfect matches than 10 mediocre ones
+
 [Job Title] | [Company Name]
 [Start Date] - [End Date]
 • [Achievement with quantifiable result]
