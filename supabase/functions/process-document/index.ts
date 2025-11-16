@@ -63,11 +63,10 @@ serve(async (req) => {
     try {
       const fileExtension = document.name.toLowerCase().split('.').pop();
       const arrayBuffer = await fileData.arrayBuffer();
-      const buffer = new Uint8Array(arrayBuffer);
 
       if (fileExtension === 'docx') {
         console.log('Processing DOCX file');
-        const result = await mammoth.extractRawText({ buffer });
+        const result = await mammoth.extractRawText({ arrayBuffer });
         text = result.value;
         console.log('Extracted DOCX text length:', text.length);
       } else if (fileExtension === 'pdf') {
