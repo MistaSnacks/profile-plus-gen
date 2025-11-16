@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2, Trash2 } from "lucide-react";
+import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2, Trash2, RefreshCw } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +27,7 @@ const Documents = () => {
   const [uploading, setUploading] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
+  const [reprocessing, setReprocessing] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!loading && !user) {
@@ -199,6 +200,39 @@ const Documents = () => {
     }
   };
 
+  const handleReprocess = async (documentId: string) => {
+    try {
+      setReprocessing(prev => new Set(prev).add(documentId));
+      
+      const { error } = await supabase.functions.invoke("process-document", {
+        body: { documentId }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Document reprocessed successfully",
+      });
+      
+      // Refresh documents to show updated extracted_text
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Error reprocessing document:", error);
+      toast({
+        title: "Error",
+        description: "Failed to reprocess document",
+        variant: "destructive",
+      });
+    } finally {
+      setReprocessing(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(documentId);
+        return newSet;
+      });
+    }
+  };
+
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return "Unknown size";
     return bytes < 1024 * 1024
@@ -344,6 +378,19 @@ const Documents = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleReprocess(doc.id)}
+                      disabled={reprocessing.has(doc.id)}
+                      title="Reprocess document to extract text"
+                    >
+                      {reprocessing.has(doc.id) ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"

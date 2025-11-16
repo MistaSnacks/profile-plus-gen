@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import mammoth from "https://esm.sh/mammoth@1.6.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -57,18 +58,38 @@ serve(async (req) => {
       throw new Error('Failed to download file');
     }
 
-    // Extract text from file (for now, just use placeholder for binary files)
+    // Extract text from file based on file type
     let text = '';
     try {
-      // Try to extract text - this works for plain text files
-      // For DOCX/PDF, we'll implement proper parsing later
-      text = await fileData.text();
+      const fileExtension = document.name.toLowerCase().split('.').pop();
+      const arrayBuffer = await fileData.arrayBuffer();
+      const buffer = new Uint8Array(arrayBuffer);
+
+      if (fileExtension === 'docx') {
+        console.log('Processing DOCX file');
+        const result = await mammoth.extractRawText({ buffer });
+        text = result.value;
+        console.log('Extracted DOCX text length:', text.length);
+      } else if (fileExtension === 'pdf') {
+        console.log('Processing PDF file - using placeholder for now');
+        // PDF parsing requires additional dependencies, marking for extraction
+        text = `[PDF file: ${document.name} - text extraction in progress]`;
+      } else {
+        // Try to extract as plain text
+        console.log('Processing as plain text file');
+        text = await fileData.text();
+      }
+
       // Remove null bytes that Postgres TEXT columns cannot handle
       text = text.replace(/\u0000/g, '');
-      console.log('Extracted text length:', text.length);
+      
+      // Clean up extra whitespace
+      text = text.replace(/\s+/g, ' ').trim();
+      
     } catch (error) {
-      console.log('Could not extract text directly, file might be binary format');
-      text = `[Binary file: ${document.name}]`;
+      console.error('Error extracting text:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      text = `[Could not extract text from: ${document.name}. Error: ${errorMessage}]`;
     }
 
     // Update document with extracted text
