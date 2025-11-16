@@ -1,10 +1,9 @@
-import { Home, FileText, Sparkles, FolderOpen, MessageSquare } from "lucide-react";
+import { FileText, Sparkles, FolderOpen, MessageSquare } from "lucide-react";
 import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 
 export const Navigation = () => {
   const navItems = [
-    { to: "/", icon: Home, label: "Dashboard" },
     { to: "/documents", icon: FileText, label: "Documents" },
     { to: "/generate", icon: Sparkles, label: "Generate" },
     { to: "/resumes", icon: FolderOpen, label: "Resumes" },
