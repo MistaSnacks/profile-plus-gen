@@ -11,14 +11,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target, ChevronDown, Trash2, Edit2, Save, X, Check } from "lucide-react";
+import { FileText, TrendingUp, Download, Eye, Loader2, Sparkles, AlertCircle, CheckCircle, Target, ChevronDown, Trash2, Edit2, Save, X, Check, FolderPlus } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { exportToPDF, exportToDOCX } from "@/utils/resumeExport";
+import { exportResumeWithTemplate, ATSTemplate } from "@/utils/resumeTemplates";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Resume {
   id: string;
@@ -43,6 +44,8 @@ const Resumes = () => {
   const [isReformatting, setIsReformatting] = useState(false);
   const [reformattedResume, setReformattedResume] = useState<{content: string, atsScore: number} | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ATSTemplate>('classic');
+  const [selectedFormat, setSelectedFormat] = useState<'pdf' | 'docx'>('pdf');
 
   useEffect(() => {
     if (!loading && !user) {
@@ -108,26 +111,12 @@ const Resumes = () => {
     setPreviewResume(resume);
   };
 
-  const handleDownload = (resume: Resume, format: 'pdf' | 'docx') => {
-    try {
-      if (format === 'pdf') {
-        exportToPDF(resume);
-      } else {
-        exportToDOCX(resume);
-      }
-      
-      toast({
-        title: "Resume downloaded",
-        description: `Your resume has been downloaded as ${format.toUpperCase()}`,
-      });
-    } catch (error) {
-      console.error('Download error:', error);
-      toast({
-        title: "Download failed",
-        description: "There was an error downloading your resume",
-        variant: "destructive",
-      });
-    }
+  const handleDownload = (resume: Resume) => {
+    exportResumeWithTemplate(resume, selectedTemplate, selectedFormat);
+    toast({
+      title: "Download Started",
+      description: `Downloading ${selectedTemplate} template as ${selectedFormat.toUpperCase()}`,
+    });
   };
 
   const handleEditTitle = (resume: Resume) => {
@@ -294,7 +283,6 @@ const Resumes = () => {
 
       if (error) throw error;
 
-      // Update local state
       setResumes(resumes.map(r => 
         r.id === previewResume.id 
           ? { ...r, content: reformattedResume.content, ats_score: reformattedResume.atsScore }
@@ -315,6 +303,94 @@ const Resumes = () => {
       toast({
         title: "Save Failed",
         description: "Failed to save the reformatted resume.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveAsNewResume = async () => {
+    if (!previewResume || !reformattedResume) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('generated_resumes')
+        .insert({
+          title: `${previewResume.title} (Optimized)`,
+          content: reformattedResume.content,
+          ats_score: reformattedResume.atsScore,
+          user_id: user?.id,
+          job_description_id: null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setResumes([data, ...resumes]);
+
+      toast({
+        title: "Resume Saved",
+        description: "Optimized resume saved to My Resumes.",
+      });
+
+      setPreviewResume(null);
+      setReformattedResume(null);
+      setShowComparison(false);
+      setAnalysis(null);
+    } catch (error) {
+      console.error('Error saving new resume:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save as new resume.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveToDocuments = async () => {
+    if (!previewResume || !reformattedResume) return;
+
+    try {
+      // Create a blob from the content
+      const blob = new Blob([reformattedResume.content], { type: 'text/plain' });
+      const fileName = `${previewResume.title}_optimized.txt`;
+      const filePath = `${user?.id}/${fileName}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, blob, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Create document record
+      const { error: dbError } = await supabase
+        .from('documents')
+        .insert({
+          name: fileName,
+          file_path: filePath,
+          type: 'resume',
+          user_id: user?.id,
+          extracted_text: reformattedResume.content,
+          file_size: blob.size
+        });
+
+      if (dbError) throw dbError;
+
+      toast({
+        title: "Added to Documents",
+        description: "Optimized resume added to your knowledge base.",
+      });
+
+      setPreviewResume(null);
+      setReformattedResume(null);
+      setShowComparison(false);
+      setAnalysis(null);
+    } catch (error) {
+      console.error('Error saving to documents:', error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to add to documents.",
         variant: "destructive",
       });
     }
@@ -511,7 +587,7 @@ const Resumes = () => {
                       Preview
                     </Button>
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
+                       <DropdownMenuTrigger asChild>
                         <Button variant="default" className="flex-1">
                           <Download className="w-4 h-4 mr-2" />
                           Download
@@ -519,11 +595,8 @@ const Resumes = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleDownload(resume, 'pdf')}>
-                          Download as PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDownload(resume, 'docx')}>
-                          Download as DOCX
+                        <DropdownMenuItem onClick={() => handleDownload(resume)}>
+                          Download ({selectedTemplate} - {selectedFormat.toUpperCase()})
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -720,66 +793,83 @@ const Resumes = () => {
             )}
           </div>
 
-          <div className="flex gap-2 justify-between">
-            <div className="flex gap-2">
-              {showComparison && (
-                <>
-                  <Button onClick={handleSaveReformatted}>
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Reformatted Version
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowComparison(false);
-                      setReformattedResume(null);
-                    }}
-                  >
-                    Keep Original
-                  </Button>
-                </>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => {
-                setPreviewResume(null);
-                setAnalysis(null);
-                setReformattedResume(null);
-                setShowComparison(false);
-              }}>
-                Close
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button>
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                    <ChevronDown className="w-4 h-4 ml-2" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => {
-                    if (previewResume) {
-                      const resume = showComparison && reformattedResume
-                        ? { ...previewResume, content: reformattedResume.content, ats_score: reformattedResume.atsScore }
-                        : previewResume;
-                      handleDownload(resume, 'pdf');
-                    }
-                  }}>
-                    Download as PDF
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => {
-                    if (previewResume) {
-                      const resume = showComparison && reformattedResume
-                        ? { ...previewResume, content: reformattedResume.content, ats_score: reformattedResume.atsScore }
-                        : previewResume;
-                      handleDownload(resume, 'docx');
-                    }
-                  }}>
-                    Download as DOCX
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="flex flex-col gap-4">
+            {showComparison && (
+              <div className="flex gap-2 flex-wrap">
+                <Button onClick={handleSaveReformatted}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Update Current Resume
+                </Button>
+                <Button onClick={handleSaveAsNewResume} variant="outline">
+                  <FolderPlus className="w-4 h-4 mr-2" />
+                  Save as New Resume
+                </Button>
+                <Button onClick={handleSaveToDocuments} variant="outline">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Add to Documents
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setShowComparison(false);
+                    setReformattedResume(null);
+                  }}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Keep Original
+                </Button>
+              </div>
+            )}
+            
+            <div className="flex gap-2 justify-between items-end">
+              <div className="flex gap-2 items-end">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">Template</label>
+                  <Select value={selectedTemplate} onValueChange={(value) => setSelectedTemplate(value as ATSTemplate)}>
+                    <SelectTrigger className="w-[140px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="classic">Classic ATS</SelectItem>
+                      <SelectItem value="modern">Modern ATS</SelectItem>
+                      <SelectItem value="minimal">Minimal ATS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">Format</label>
+                  <Select value={selectedFormat} onValueChange={(value) => setSelectedFormat(value as 'pdf' | 'docx')}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pdf">PDF</SelectItem>
+                      <SelectItem value="docx">DOCX</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => {
+                  setPreviewResume(null);
+                  setAnalysis(null);
+                  setReformattedResume(null);
+                  setShowComparison(false);
+                }}>
+                  Close
+                </Button>
+                <Button onClick={() => {
+                  if (previewResume) {
+                    const resume = showComparison && reformattedResume
+                      ? { ...previewResume, content: reformattedResume.content, ats_score: reformattedResume.atsScore }
+                      : previewResume;
+                    handleDownload(resume);
+                  }
+                }}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
