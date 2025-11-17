@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2, Trash2, RefreshCw, Plus } from "lucide-react";
+import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2, Trash2, RefreshCw, Plus, Info, ArrowRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Navigation } from "@/components/Navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 type Document = {
   id: string;
@@ -39,6 +40,9 @@ const Documents = () => {
     certifications: "",
     projects: "",
     additionalInfo: ""
+  });
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem("onboarding_seen");
   });
 
   useEffect(() => {
@@ -374,6 +378,56 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
           <h1 className="text-4xl font-bold text-foreground mb-2">Document Library</h1>
           <p className="text-muted-foreground">Manage your resumes, work experience, and skills documents</p>
         </header>
+
+        {showOnboarding && (
+          <Alert className="mb-8 bg-primary/5 border-primary/20">
+            <Info className="h-5 w-5 text-primary" />
+            <AlertDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-3 flex-1">
+                  <h3 className="font-semibold text-foreground text-lg">Welcome! Here's how to get started:</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary font-semibold text-xs flex-shrink-0 mt-0.5">1</span>
+                      <div>
+                        <strong>Upload Your Documents</strong> - Add your resume, work experience, skills, and other professional documents below. You can drag & drop files or manually enter information.
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary font-semibold text-xs flex-shrink-0 mt-0.5">2</span>
+                      <div>
+                        <strong>Generate Tailored Resumes</strong> - Go to the <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => navigate("/generate")}>Generate</Button> tab and paste a job description. Our AI will create a perfectly tailored resume.
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary font-semibold text-xs flex-shrink-0 mt-0.5">3</span>
+                      <div>
+                        <strong>Review Your Resumes</strong> - Check the <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => navigate("/resumes")}>Resumes</Button> tab to view all generated resumes. You can opt in for AI analysis to get improvement suggestions and ATS scores.
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary font-semibold text-xs flex-shrink-0 mt-0.5">4</span>
+                      <div>
+                        <strong>Chat with Your Documents</strong> - Use the <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => navigate("/chat")}>Chat</Button> feature to ask questions about your professional history, get career advice, or practice interview answers based on your documents.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowOnboarding(false);
+                    localStorage.setItem("onboarding_seen", "true");
+                  }}
+                  className="flex-shrink-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div
           className={`mb-8 border-2 border-dashed rounded-2xl p-12 text-center transition-all ${

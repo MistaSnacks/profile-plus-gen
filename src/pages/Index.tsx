@@ -2,9 +2,18 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Sparkles, FileText, Zap, Target, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      navigate("/documents");
+    }
+  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-subtle overflow-hidden">
