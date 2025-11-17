@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2, Trash2, RefreshCw } from "lucide-react";
+import { Upload, FileText, Briefcase, Award, Linkedin, X, Loader2, Trash2, RefreshCw, Plus } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Navigation } from "@/components/Navigation";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 type Document = {
   id: string;
@@ -28,6 +30,16 @@ const Documents = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [reprocessing, setReprocessing] = useState<Set<string>>(new Set());
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [savingManualEntry, setSavingManualEntry] = useState(false);
+  const [manualEntry, setManualEntry] = useState({
+    workExperience: "",
+    skills: "",
+    education: "",
+    certifications: "",
+    projects: "",
+    additionalInfo: ""
+  });
 
   useEffect(() => {
     if (!loading && !user) {
@@ -240,6 +252,96 @@ const Documents = () => {
       : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const handleSaveManualEntry = async () => {
+    if (!user) return;
+
+    const content = `
+PROFESSIONAL INFORMATION
+
+${manualEntry.workExperience ? `WORK EXPERIENCE:\n${manualEntry.workExperience}\n\n` : ''}
+${manualEntry.skills ? `SKILLS:\n${manualEntry.skills}\n\n` : ''}
+${manualEntry.education ? `EDUCATION:\n${manualEntry.education}\n\n` : ''}
+${manualEntry.certifications ? `CERTIFICATIONS:\n${manualEntry.certifications}\n\n` : ''}
+${manualEntry.projects ? `PROJECTS:\n${manualEntry.projects}\n\n` : ''}
+${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additionalInfo}` : ''}
+    `.trim();
+
+    if (!content || content === 'PROFESSIONAL INFORMATION') {
+      toast({
+        title: "Empty Entry",
+        description: "Please fill in at least one field",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSavingManualEntry(true);
+
+    try {
+      const fileName = `manual_entry_${Date.now()}.txt`;
+      const filePath = `${user.id}/${fileName}`;
+      const blob = new Blob([content], { type: 'text/plain' });
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(filePath, blob);
+
+      if (uploadError) throw uploadError;
+
+      // Create document record
+      const { data: doc, error: docError } = await supabase
+        .from("documents")
+        .insert([{
+          user_id: user.id,
+          name: fileName,
+          type: "manual_entry" as any,
+          file_path: filePath,
+          file_size: blob.size,
+        }])
+        .select()
+        .single();
+
+      if (docError) throw docError;
+
+      // Process document
+      const { error: processError } = await supabase.functions.invoke(
+        "process-document",
+        {
+          body: { documentId: doc.id },
+        }
+      );
+
+      if (processError) throw processError;
+
+      toast({
+        title: "Success",
+        description: "Manual entry saved to knowledge base",
+      });
+
+      // Reset form and refresh documents
+      setManualEntry({
+        workExperience: "",
+        skills: "",
+        education: "",
+        certifications: "",
+        projects: "",
+        additionalInfo: ""
+      });
+      setShowManualEntry(false);
+      await fetchDocuments();
+    } catch (error) {
+      console.error("Error saving manual entry:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save manual entry",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingManualEntry(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -320,6 +422,119 @@ const Documents = () => {
           </Button>
           <p className="text-xs text-muted-foreground mt-4">Supports PDF, DOCX • Max 10MB per file</p>
         </div>
+
+        {/* Manual Entry Section */}
+        <Card className="p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-foreground mb-1">Manual Entry</h2>
+              <p className="text-sm text-muted-foreground">Add your professional information directly to your knowledge base</p>
+            </div>
+            <Button
+              onClick={() => setShowManualEntry(!showManualEntry)}
+              variant="outline"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {showManualEntry ? "Hide Form" : "Add Information"}
+            </Button>
+          </div>
+
+          {showManualEntry && (
+            <div className="space-y-4 mt-6">
+              <div className="space-y-2">
+                <Label htmlFor="workExperience">Work Experience</Label>
+                <Textarea
+                  id="workExperience"
+                  placeholder="List your work experience, job titles, responsibilities, achievements..."
+                  value={manualEntry.workExperience}
+                  onChange={(e) => setManualEntry({ ...manualEntry, workExperience: e.target.value })}
+                  rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="skills">Skills</Label>
+                <Textarea
+                  id="skills"
+                  placeholder="List your technical skills, soft skills, tools, technologies..."
+                  value={manualEntry.skills}
+                  onChange={(e) => setManualEntry({ ...manualEntry, skills: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="education">Education</Label>
+                <Textarea
+                  id="education"
+                  placeholder="List your degrees, institutions, graduation dates..."
+                  value={manualEntry.education}
+                  onChange={(e) => setManualEntry({ ...manualEntry, education: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="certifications">Certifications</Label>
+                <Textarea
+                  id="certifications"
+                  placeholder="List your certifications, licenses, professional credentials..."
+                  value={manualEntry.certifications}
+                  onChange={(e) => setManualEntry({ ...manualEntry, certifications: e.target.value })}
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="projects">Projects</Label>
+                <Textarea
+                  id="projects"
+                  placeholder="Describe your notable projects, personal work, portfolio pieces..."
+                  value={manualEntry.projects}
+                  onChange={(e) => setManualEntry({ ...manualEntry, projects: e.target.value })}
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="additionalInfo">Additional Information</Label>
+                <Textarea
+                  id="additionalInfo"
+                  placeholder="Any other relevant information about your professional background..."
+                  value={manualEntry.additionalInfo}
+                  onChange={(e) => setManualEntry({ ...manualEntry, additionalInfo: e.target.value })}
+                  rows={2}
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handleSaveManualEntry}
+                  disabled={savingManualEntry}
+                >
+                  {savingManualEntry && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Save to Knowledge Base
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowManualEntry(false);
+                    setManualEntry({
+                      workExperience: "",
+                      skills: "",
+                      education: "",
+                      certifications: "",
+                      projects: "",
+                      additionalInfo: ""
+                    });
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
           <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all hover:scale-[1.02]">
