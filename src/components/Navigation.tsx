@@ -3,6 +3,7 @@ import { NavLink } from "./NavLink";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./ui/button";
+import { ThemeToggle } from "./ThemeToggle";
 
 export const Navigation = () => {
   const { signOut } = useAuth();
@@ -30,15 +31,18 @@ export const Navigation = () => {
               </NavLink>
             ))}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={signOut}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Sign Out</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={signOut}
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </Button>
+          </div>
         </div>
       </div>
     </nav>
