@@ -295,7 +295,7 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
         .insert([{
           user_id: user.id,
           name: fileName,
-          type: "manual_entry" as any,
+          type: "other",
           file_path: filePath,
           file_size: blob.size,
         }])
@@ -442,7 +442,7 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
           {showManualEntry && (
             <div className="space-y-4 mt-6">
               <div className="space-y-2">
-                <Label htmlFor="workExperience">Work Experience</Label>
+                <Label htmlFor="workExperience">Work Experience <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Textarea
                   id="workExperience"
                   placeholder="List your work experience, job titles, responsibilities, achievements..."
@@ -453,7 +453,7 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="skills">Skills</Label>
+                <Label htmlFor="skills">Skills <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Textarea
                   id="skills"
                   placeholder="List your technical skills, soft skills, tools, technologies..."
@@ -464,7 +464,7 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="education">Education</Label>
+                <Label htmlFor="education">Education <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Textarea
                   id="education"
                   placeholder="List your degrees, institutions, graduation dates..."
@@ -475,7 +475,7 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="certifications">Certifications</Label>
+                <Label htmlFor="certifications">Certifications <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Textarea
                   id="certifications"
                   placeholder="List your certifications, licenses, professional credentials..."
@@ -486,7 +486,7 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="projects">Projects</Label>
+                <Label htmlFor="projects">Projects <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Textarea
                   id="projects"
                   placeholder="Describe your notable projects, personal work, portfolio pieces..."
@@ -497,7 +497,7 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="additionalInfo">Additional Information</Label>
+                <Label htmlFor="additionalInfo">Additional Information <span className="text-muted-foreground text-xs">(optional)</span></Label>
                 <Textarea
                   id="additionalInfo"
                   placeholder="Any other relevant information about your professional background..."
@@ -610,8 +610,10 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDelete(doc.id, doc.file_path)}
+                      className="text-destructive hover:text-destructive"
+                      title="Delete document"
                     >
-                      <X className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
