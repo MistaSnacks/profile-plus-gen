@@ -68,12 +68,12 @@ Your task is to:
 - Maintain the same basic structure but improve the content quality
 
 CRITICAL FORMATTING REQUIREMENTS:
-- Output ONLY plain text, no markdown, no special formatting
 - Use simple text formatting: ALL CAPS for section headers, regular text for content
-- Do NOT use asterisks, bullets (•), or any markdown symbols
 - For bullet points, use a simple dash (-) at the start of lines
-- Do NOT use bold (**text**), italic (*text*), or any markdown formatting
-- Keep it simple and ATS-friendly: plain text only
+- **IMPORTANT**: Wrap ANY new additions, improvements, or significantly changed content in **double asterisks** to make it bold
+- Examples: **Led team of 5 engineers**, **Increased sales by 45%**, **Python, React, Node.js**
+- Only mark content that was added or substantially improved, not minor word changes
+- Keep unchanged content as plain text without asterisks
 
 Do not invent new experiences or qualifications. Only enhance and rewrite existing content using better language and incorporating the suggested improvements.`;
 
@@ -91,7 +91,7 @@ ${resume.content}
 AI ANALYSIS & SUGGESTIONS:
 ${analysis}
 
-Please reformat the resume incorporating these suggestions. Output ONLY the reformatted resume text with no additional commentary. Remember: plain text only, no markdown formatting.`;
+Please reformat the resume incorporating these suggestions. Output ONLY the reformatted resume text with no additional commentary. Remember to mark all new or significantly improved content in **bold** using double asterisks.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
