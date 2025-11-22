@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { exportResumeWithTemplate, ATSTemplate } from "@/utils/resumeTemplates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ResumeContent } from "@/components/ResumeContent";
 
 interface Resume {
   id: string;
@@ -776,9 +777,7 @@ const Resumes = () => {
                     </Badge>
                   </div>
                   <ScrollArea className="h-[calc(70vh-2rem)] rounded-md border p-4 bg-muted/30">
-                    <pre className="whitespace-pre-wrap font-sans text-xs text-foreground">
-                      {reformattedResume.content}
-                    </pre>
+                    <ResumeContent content={reformattedResume.content} />
                   </ScrollArea>
                 </div>
               </div>
