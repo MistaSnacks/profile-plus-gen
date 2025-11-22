@@ -68,19 +68,19 @@ const Index = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="text-5xl lg:text-7xl font-bold text-foreground leading-tight"
+                className="text-5xl lg:text-7xl font-bold leading-tight"
               >
-                T<span className="text-primary">AI</span>LOR Your Resume to{" "}
-                <span className="bg-gradient-hero bg-clip-text text-transparent">Every Job</span>
+                <span className="text-foreground">Tailor your resume</span>{" "}
+                <span className="text-primary">to every job</span>
               </motion.h1>
 
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="text-xl text-muted-foreground max-w-xl"
+                className="text-lg text-muted-foreground max-w-xl leading-relaxed"
               >
-                Transform your resume in seconds with AI. Match job descriptions perfectly, boost your ATS score, and land more interviews.
+                Stop sending generic resumes. Our RAG-powered AI analyzes job descriptions and rewrites your resume to highlight the perfect skills—in seconds.
               </motion.p>
 
               <motion.div
@@ -92,18 +92,18 @@ const Index = () => {
                 <Button
                   size="lg"
                   onClick={() => navigate("/auth")}
-                  className="bg-gradient-primary text-white hover:opacity-90 shadow-glow group"
+                  className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-glow group font-semibold"
                 >
                   Get Started Free
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <Button
                   size="lg"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => navigate("/resumes")}
-                  className="border-primary/20 hover:bg-primary/5"
+                  className="text-foreground hover:bg-muted font-semibold"
                 >
-                  View Demo
+                  See How It Works
                 </Button>
               </motion.div>
 
