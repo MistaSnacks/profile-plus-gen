@@ -15,16 +15,16 @@ export const Navigation = () => {
   ];
 
   return (
-    <nav className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
+    <nav className="bg-card/80 backdrop-blur-md border-b-2 border-primary/50 sticky top-0 z-50 shadow-glow">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between py-4">
+          <div className="flex items-center gap-2">
             {navItems.map(({ to, icon: Icon, label }) => (
               <NavLink
                 key={to}
                 to={to}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all"
-                activeClassName="bg-accent text-foreground font-medium"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-primary/20 transition-all font-bold uppercase tracking-wider text-sm border-2 border-transparent hover:border-primary/50"
+                activeClassName="bg-gradient-primary text-white shadow-glow border-2 border-primary"
               >
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{label}</span>
@@ -37,7 +37,7 @@ export const Navigation = () => {
               variant="ghost"
               size="sm"
               onClick={signOut}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-2 text-muted-foreground hover:text-neon-pink hover:bg-primary/10 font-bold uppercase tracking-wider border-2 border-transparent hover:border-primary/50"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Sign Out</span>
