@@ -20,6 +20,10 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-subtle overflow-hidden relative">
       <ThreeBackground />
       
+      {/* Dithering overlay */}
+      <div className="fixed inset-0 pointer-events-none z-[100] dither-pattern opacity-60" />
+      <div className="fixed inset-0 pointer-events-none z-[100] noise-texture" />
+      
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-4 py-20">
         {/* Animated gradient orbs */}
@@ -69,7 +73,7 @@ const Index = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-3 px-6 py-3 bg-card/50 backdrop-blur-sm rounded-full border-2 border-primary shadow-glow"
+              className="inline-flex items-center gap-3 px-6 py-3 bg-card/50 backdrop-blur-sm rounded-full border-2 border-primary shadow-glow dither-strong"
             >
               <Sparkles className="w-5 h-5 text-neon-yellow animate-pulse" />
               <span className="text-sm font-bold text-foreground uppercase tracking-wider">
@@ -183,7 +187,7 @@ const Index = () => {
             ease: "easeInOut"
           }}
         >
-          <div className="w-20 h-20 rounded-xl bg-gradient-primary shadow-glow flex items-center justify-center rotate-12 border-2 border-neon-pink">
+          <div className="w-20 h-20 rounded-xl bg-gradient-primary shadow-glow flex items-center justify-center rotate-12 border-2 border-neon-pink dither-overlay">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
         </motion.div>
@@ -200,7 +204,7 @@ const Index = () => {
             delay: 1
           }}
         >
-          <div className="w-24 h-24 rounded-xl bg-gradient-secondary shadow-glow-cyan flex items-center justify-center -rotate-12 border-2 border-neon-cyan">
+          <div className="w-24 h-24 rounded-xl bg-gradient-secondary shadow-glow-cyan flex items-center justify-center -rotate-12 border-2 border-neon-cyan dither-overlay">
             <Zap className="w-12 h-12 text-background" />
           </div>
         </motion.div>
@@ -217,7 +221,7 @@ const Index = () => {
             delay: 2
           }}
         >
-          <div className="w-16 h-16 rounded-xl bg-gradient-accent shadow-glow-yellow flex items-center justify-center rotate-45 border-2 border-neon-yellow">
+          <div className="w-16 h-16 rounded-xl bg-gradient-accent shadow-glow-yellow flex items-center justify-center rotate-45 border-2 border-neon-yellow dither-overlay">
             <Target className="w-8 h-8 text-background" />
           </div>
         </motion.div>
@@ -274,10 +278,10 @@ const Index = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 whileHover={{ scale: 1.05, y: -8 }}
-                className="group relative bg-card/50 backdrop-blur-sm rounded-2xl p-8 border-2 border-border hover:border-primary transition-all duration-300 hover:shadow-glow overflow-hidden"
+                className="group relative bg-card/50 backdrop-blur-sm rounded-2xl p-8 border-2 border-border hover:border-primary transition-all duration-300 hover:shadow-glow overflow-hidden dither-strong"
               >
                 <div className="relative z-10">
-                  <div className={`w-16 h-16 rounded-xl bg-${feature.gradient} shadow-glow flex items-center justify-center mb-6 rotate-6 group-hover:rotate-12 transition-transform`}>
+                  <div className={`w-16 h-16 rounded-xl bg-${feature.gradient} shadow-glow flex items-center justify-center mb-6 rotate-6 group-hover:rotate-12 transition-transform dither-overlay`}>
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
                   <h3 className={`text-2xl font-black mb-4 text-${feature.color} uppercase tracking-wider`}>
@@ -312,23 +316,25 @@ const Index = () => {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="max-w-4xl mx-auto bg-card/50 backdrop-blur-sm rounded-3xl shadow-strong p-16 text-center border-4 border-primary"
+            className="max-w-4xl mx-auto bg-card/50 backdrop-blur-sm rounded-3xl shadow-strong p-16 text-center border-4 border-primary dither-strong relative overflow-hidden"
           >
-            <h2 className="text-5xl lg:text-7xl font-black mb-6">
+            {/* Scanlines effect */}
+            <div className="absolute inset-0 scanlines pointer-events-none z-[1] opacity-30" />
+            <h2 className="text-5xl lg:text-7xl font-black mb-6 relative z-10">
               <span className="text-foreground">READY TO</span>
               <br />
               <span className="bg-gradient-neon bg-clip-text text-transparent neon-text">DOMINATE</span>
               <br />
               <span className="text-neon-cyan">THE MARKET?</span>
             </h2>
-            <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto font-medium">
+            <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto font-medium relative z-10">
               Join thousands of job seekers who have <span className="text-neon-pink font-bold">leveled up</span> their resumes with TAILOR
             </p>
             <Button
               size="lg"
               onClick={() => navigate("/auth")}
               variant="neon"
-              className="text-xl px-12 py-8 h-auto group"
+              className="text-xl px-12 py-8 h-auto group relative z-10"
             >
               START TAILORING NOW
               <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-3 transition-transform" />
