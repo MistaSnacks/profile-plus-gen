@@ -217,43 +217,77 @@ Company: [company name or "Not specified"]`;
     let { score: atsScore, matchedKeywords, uniqueKeywords } = calculateATSScore(resumeContent);
     console.log('Initial ATS Score:', atsScore);
 
-    // ALWAYS run multi-pass refinement with full analysis-reformat workflow
-    console.log('Starting analysis and refinement workflow...');
+    // ALWAYS run document-aware analysis and reformat workflow
+    console.log('Starting document-aware analysis and refinement workflow...');
       
-      // Step 1: Analyze the resume
-      const analysisPrompt = `You are an ATS (Applicant Tracking System) expert. Analyze this resume against the job description and provide detailed feedback.
+      // Step 1: Document-Aware Analysis
+      const analysisSystemPrompt = `You are an expert ATS (Applicant Tracking System) consultant and career coach with access to the candidate's ORIGINAL DOCUMENTS. Your role is to analyze resumes and provide specific, actionable, TRUTHFUL feedback.
+
+CRITICAL RULES FOR CATEGORIZING SUGGESTIONS:
+1. **REPHRASE EXISTING** - Skills, experiences, or achievements found in the original documents that can be reworded for better impact
+   - Example: "automation" in docs → suggest "AI-powered automation" if relevant
+   - Mark with [REPHRASE]
+
+2. **REASONABLE INFERENCE** - Adjacent skills that can be safely implied from documented experience
+   - Example: Used "Python" → can infer "scripting" capability
+   - Must be logically connected to documented skills
+   - Mark with [INFERENCE]
+
+3. **SKILLS GAP** - Required skills in job description that are NOT found in original documents
+   - Do NOT suggest adding these as if they exist
+   - Instead, flag these as gaps to be addressed through learning
+   - Mark with [GAP]
+
+ANTI-FABRICATION RULES:
+- NEVER suggest adding skills, tools, or experiences not evidenced in original documents
+- NEVER invent metrics, certifications, or job responsibilities
+- When a job requirement isn't met, be honest about the gap
+- Focus on optimizing what truly exists vs. fabricating what doesn't
+
+Provide concrete, implementable suggestions that maintain resume truthfulness.`;
+
+      const analysisUserPrompt = `Analyze this resume against the job description while VERIFYING all suggestions against the candidate's original documents.
+
+JOB TITLE: ${jobTitle}
+COMPANY: ${companyName || 'the company'}
 
 JOB DESCRIPTION:
 ${jobDescription}
 
-RESUME:
+CURRENT RESUME:
 ${resumeContent}
 
-Provide your analysis in the following format:
+ORIGINAL DOCUMENTS (SOURCE OF TRUTH):
+${documentsText}
 
-KEYWORD MATCH SCORE: [0-100]
-Explanation of score
+CURRENT ATS SCORE: ${atsScore}%
 
-STRENGTHS:
-• [Strength 1]
-• [Strength 2]
-• [Strength 3]
+ANALYSIS REQUIREMENTS:
+Provide a structured analysis with THREE CATEGORIES:
 
-GAPS:
-• [Gap 1 - what's missing]
-• [Gap 2 - what's missing]
-• [Gap 3 - what's missing]
+1. **[REPHRASE] - Skills from Original Documents**
+   - Keywords/skills found IN original documents that should be emphasized or reworded
+   - Show which document contains the evidence
+   - Example: "Python (from: Resume_2024.pdf) → suggest highlighting 'Python automation'"
 
-RECOMMENDATIONS:
-• [Specific actionable recommendation 1]
-• [Specific actionable recommendation 2]
-• [Specific actionable recommendation 3]
+2. **[INFERENCE] - Reasonable Inferences**
+   - Skills that can be safely inferred from documented experience
+   - Explain the logical connection
+   - Example: "Git experience (inferred from 'team code projects' in Portfolio.pdf)"
 
-Focus on:
-- Keywords and phrases from the job description
-- Required skills and qualifications
-- Experience level alignment
-- ATS compatibility issues`;
+3. **[GAP] - Honest Skills Gaps**
+   - Job requirements NOT found in any original document
+   - Flag as areas for future development, NOT as things to add now
+   - Example: "Docker (required, not found in documents - recommend learning)"
+
+4. **ATS Formatting Issues**
+   - Structure, formatting, or organization problems
+
+5. **Metrics & Achievements**
+   - Only suggest adding metrics that can be derived from documented work
+   - Flag if job requires metrics not present in docs
+
+CRITICAL: For each suggestion, cite which document(s) support it or explicitly state [GAP] if unsupported.`;
 
       const analysisResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
@@ -264,7 +298,8 @@ Focus on:
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
           messages: [
-            { role: 'user', content: analysisPrompt }
+            { role: 'system', content: analysisSystemPrompt },
+            { role: 'user', content: analysisUserPrompt }
           ],
         }),
       });
@@ -274,68 +309,112 @@ Focus on:
         const analysis = analysisData.choices[0].message.content;
         console.log('Analysis complete, refining resume...');
 
-        // Step 2: Reformat based on analysis
-        const reformatSystemPrompt = `You are a resume and ATS expert. Your task is to rewrite the resume to address the analysis feedback and improve the ATS score.
+        // Step 2: Document-Verified Reformat
+        const reformatSystemPrompt = `You are a resume optimization expert with STRICT TRUTHFULNESS REQUIREMENTS. You have access to the candidate's ORIGINAL DOCUMENTS and must verify ALL changes against them.
 
-CRITICAL: Format the resume as ATS-friendly PLAIN TEXT with clear section headers. Use the following structure:
+🔒 ABSOLUTE RULES - ZERO TOLERANCE FOR VIOLATIONS:
+
+1. **ONLY ADD [REPHRASE] ITEMS**
+   - These are skills/experiences explicitly found in original documents
+   - Can be reworded for impact but content must be verifiable
+   ✅ Example: "SQL automation" in docs → "Advanced SQL-based automation"
+
+2. **CAUTIOUSLY ADD [INFERENCE] ITEMS**
+   - ONLY if inference is conservative and logical
+   - Must have clear connection to documented skills
+   ⚠️ Example: "Python" in docs → "Python scripting" (OK)
+   ❌ Example: "Python" in docs → "AI/ML expertise" (TOO BIG LEAP)
+
+3. **NEVER ADD [GAP] ITEMS**
+   - These are skills NOT in documents
+   - Must be excluded from final resume
+   - Lower ATS score is ACCEPTABLE - fabrication is NOT
+   ❌ Example: If "Docker" marked [GAP] → DO NOT ADD IT
+
+4. **VERIFY EVERYTHING AGAINST DOCUMENTS**
+   - Before adding ANY skill, tool, or experience → CHECK DOCUMENTS
+   - If not found in documents → DO NOT ADD
+   - If uncertain → DO NOT ADD
+
+FORBIDDEN ADDITIONS (unless explicitly in documents):
+❌ Specific tools/platforms not documented (Zendesk, Docker, Kubernetes, etc.)
+❌ Certifications not listed (PMP, CAMS, AWS certs, etc.)
+❌ Programming languages not documented
+❌ Degrees or educational credentials not in documents
+❌ Specific AI tools not mentioned (ChatGPT, Claude, unless verified)
+❌ Metrics or achievements not documented
+
+ALLOWED OPTIMIZATIONS:
+✅ Reword existing bullet points with stronger action verbs
+✅ Reorganize existing experiences for better flow
+✅ Emphasize documented skills relevant to job
+✅ Add keywords from job description to EXISTING experiences (if not fabricating)
+✅ Improve formatting and structure
+
+CRITICAL: Format as ATS-friendly PLAIN TEXT (no markdown **, ##).
 
 [FULL NAME]
-[Email] | [Phone] | [LinkedIn] | [Portfolio]
+[Contact Info]
 
 PROFESSIONAL SUMMARY
-[2-3 sentences highlighting key qualifications]
+[Brief summary from documented experience]
 
 SKILLS
-- [Skill category]: [comma-separated skills]
-- [Another category]: [skills]
+[ONLY skills found in documents or reasonable inferences]
 
 PROFESSIONAL EXPERIENCE
-[Job Title] | [Company Name]
-[Start Date] - [End Date]
-• [Achievement with quantifiable result]
-• [Achievement with quantifiable result]
-• [Achievement with quantifiable result]
+[ONLY positions from documents, bullet points from verified work]
 
 EDUCATION
-[Degree] in [Field] | [Institution]
-[Graduation Date]
+[ONLY if degrees exist in documents]
 
-CERTIFICATIONS (if applicable)
-• [Certification Name] - [Issuing Organization] ([Year])
+CERTIFICATIONS
+[ONLY if certifications exist in documents]
 
-Do NOT use markdown syntax (no **, ##, etc.). Use plain text with clear spacing and bullet points (•).
+Style: ${style}
 
-⚠️ CRITICAL WARNING - VIOLATIONS WILL RESULT IN REJECTION ⚠️
+REMEMBER: Truth > ATS Score. An honest 50% match is better than a fabricated 90% match.`;
 
-ABSOLUTE PROHIBITIONS DURING REFINEMENT:
-❌ DO NOT add ANY degrees not present in the original resume (if original has no degree, refined version must have no degree)
-❌ DO NOT add ANY certifications not present in the original resume (if no CAMS cert exists, don't add it)
-❌ DO NOT add ANY educational institutions not in the original
-❌ DO NOT add ANY professional licenses or designations not in the original
-❌ ONLY improve what ALREADY EXISTS - do not create new credentials
+        const reformatUserPrompt = `JOB TITLE: ${jobTitle}
+COMPANY: ${companyName || 'the company'}
 
-YOUR JOB: Incorporate missing KEYWORDS into EXISTING bullet points and experiences. DO NOT create new qualifications to fill gaps.
-
-Example of CORRECT refinement:
-Original: "• Managed fraud detection processes"
-Refined: "• Managed fraud detection and abuse vector monitoring processes using anomaly alerting systems"
-
-Example of INCORRECT refinement (NEVER DO THIS):
-Original: No CAMS certification listed
-Refined: NEVER ADD "• Certified Anti-Money Laundering Specialist (CAMS) - 2023"
-
-Style: ${style}`;
-
-        const reformatUserPrompt = `JOB DESCRIPTION:
+JOB DESCRIPTION:
 ${jobDescription}
 
-ORIGINAL RESUME:
+CURRENT RESUME:
 ${resumeContent}
 
-ANALYSIS AND FEEDBACK:
+DOCUMENT-AWARE ANALYSIS:
 ${analysis}
 
-Rewrite the resume to incorporate the recommendations and improve ATS compatibility while maintaining accuracy.`;
+ORIGINAL DOCUMENTS (VERIFY AGAINST THESE):
+${documentsText}
+
+TASK: Rewrite the resume following these STRICT RULES:
+
+1. Review the analysis categories:
+   - [REPHRASE] items → ADD these (they're verified in documents)
+   - [INFERENCE] items → ADD only if conservative and logical
+   - [GAP] items → DO NOT ADD (skills not in documents)
+
+2. For EVERY addition you consider:
+   - Ask: "Is this explicitly in the original documents?"
+   - If YES → Add it
+   - If MAYBE/INFERENCE → Only add if very conservative
+   - If NO/GAP → DO NOT ADD IT
+
+3. Improve ATS score by:
+   - Emphasizing verified skills that match job requirements
+   - Reorganizing existing content for better flow
+   - Adding job keywords to EXISTING documented experiences
+   - NOT by inventing skills or experiences
+
+4. If a job requirement isn't in documents:
+   - Accept the lower ATS score
+   - Do NOT fabricate to fill the gap
+   - Focus on what the candidate DOES have
+
+OUTPUT: Reformatted resume with ONLY verified content from original documents.`;
 
         const reformatResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
           method: 'POST',
@@ -359,9 +438,10 @@ Rewrite the resume to incorporate the recommendations and improve ATS compatibil
           // Recalculate ATS score for refined version
           const refinedResult = calculateATSScore(refinedContent);
           
-          console.log('Refined ATS Score:', refinedResult.score, '(improved from', atsScore, ')');
+          console.log('Document-Verified ATS Score:', refinedResult.score, '(from initial', atsScore, ')');
+          console.log('✅ Resume verified against', documents?.length || 0, 'original documents');
           
-          // Use refined version
+          // Use document-verified version
           resumeContent = refinedContent;
           atsScore = refinedResult.score;
           matchedKeywords = refinedResult.matchedKeywords;
@@ -403,6 +483,9 @@ Rewrite the resume to incorporate the recommendations and improve ATS compatibil
         metadata: {
           matched_keywords: matchedKeywords.length,
           total_keywords: uniqueKeywords.length,
+          document_verified: true,
+          verification_date: new Date().toISOString(),
+          documents_checked: documents?.length || 0,
         }
       })
       .select()

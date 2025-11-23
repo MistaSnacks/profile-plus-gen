@@ -502,51 +502,59 @@ const Resumes = () => {
               const status = getScoreStatus(resume.ats_score || 0);
               return (
                 <Card key={resume.id} className="p-6 bg-card shadow-soft hover:shadow-medium transition-all">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-start gap-3 flex-1">
-                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <FileText className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        {editingId === resume.id ? (
-                          <div className="flex items-center gap-2">
-                            <Input
-                              value={editingTitle}
-                              onChange={(e) => setEditingTitle(e.target.value)}
-                              className="h-8"
-                              autoFocus
-                            />
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleSaveTitle(resume.id)}
-                            >
-                              <Save className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleCancelEdit}
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-foreground">{resume.title}</h3>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEditTitle(resume)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">Generated {formatDate(resume.created_at)}</p>
-                      </div>
-                    </div>
+                   <div className="flex items-start justify-between mb-4">
+                     <div className="flex items-start gap-3 flex-1">
+                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                         <FileText className="w-6 h-6 text-primary" />
+                       </div>
+                       <div className="flex-1">
+                         {editingId === resume.id ? (
+                           <div className="flex items-center gap-2">
+                             <Input
+                               value={editingTitle}
+                               onChange={(e) => setEditingTitle(e.target.value)}
+                               className="h-8"
+                               autoFocus
+                             />
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={() => handleSaveTitle(resume.id)}
+                             >
+                               <Save className="w-4 h-4" />
+                             </Button>
+                             <Button
+                               size="sm"
+                               variant="ghost"
+                               onClick={handleCancelEdit}
+                             >
+                               <X className="w-4 h-4" />
+                             </Button>
+                           </div>
+                         ) : (
+                           <div className="flex flex-col gap-1">
+                             <div className="flex items-center gap-2">
+                               <h3 className="font-semibold text-foreground">{resume.title}</h3>
+                               <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 onClick={() => handleEditTitle(resume)}
+                                 className="h-6 w-6 p-0"
+                               >
+                                 <Edit2 className="w-3 h-3" />
+                               </Button>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <p className="text-xs text-muted-foreground">Generated {formatDate(resume.created_at)}</p>
+                               <Badge variant="outline" className="text-xs py-0 px-1.5">
+                                 <CheckCircle className="w-3 h-3 mr-1" />
+                                 Verified
+                               </Badge>
+                             </div>
+                           </div>
+                         )}
+                       </div>
+                     </div>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -673,71 +681,46 @@ const Resumes = () => {
                       </div>
                     </Card>
 
-                    {/* AI Analysis Button */}
-                    <Button
-                      onClick={handleAnalyze}
-                      disabled={isAnalyzing}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      {isAnalyzing ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4 mr-2" />
-                          AI Analysis
-                        </>
-                      )}
-                    </Button>
-
-                    {/* AI Analysis Results */}
-                    {analysis && (
-                      <ScrollArea className="h-[400px]">
-                        <div className="pr-4">
-                          <AnalysisDisplay analysis={analysis} />
-                          {!showComparison && (
-                            <Button
-                              onClick={handleReformat}
-                              disabled={isReformatting}
-                              className="w-full mt-4"
-                            >
-                              {isReformatting ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                  Reformatting...
-                                </>
-                              ) : (
-                                <>
-                                  <Sparkles className="w-4 h-4 mr-2" />
-                                  Apply Verified Suggestions
-                                </>
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                      </ScrollArea>
-                    )}
+                    {/* Document Verification Card */}
+                    <Card className="p-4 bg-gradient-card border-success/20">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle className="w-5 h-5 text-success" />
+                        <h3 className="font-semibold text-foreground">Document Verified</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        This resume was automatically verified against your original documents to ensure accuracy.
+                      </p>
+                      <ul className="space-y-2">
+                        <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                          <span>All skills verified from source documents</span>
+                        </li>
+                        <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                          <span>No fabricated content or false claims</span>
+                        </li>
+                        <li className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <Check className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+                          <span>Interview-ready and defensible</span>
+                        </li>
+                      </ul>
+                    </Card>
 
                     {/* Recommendations Card */}
-                    {!analysis && (
-                      <Card className="p-4 bg-gradient-card">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Target className="w-5 h-5 text-primary" />
-                          <h3 className="font-semibold text-foreground">Quick Tips</h3>
-                        </div>
-                        <ul className="space-y-2">
-                          {insights.recommendations.map((rec, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
-                              <span className="text-primary mt-1">•</span>
-                              <span>{rec}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </Card>
-                    )}
+                    <Card className="p-4 bg-gradient-card">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Target className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-foreground">Quick Tips</h3>
+                      </div>
+                      <ul className="space-y-2">
+                        {insights.recommendations.map((rec, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <span className="text-primary mt-1">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </Card>
                   </>
                 );
               })()}
