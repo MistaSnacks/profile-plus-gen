@@ -473,7 +473,44 @@ const { data: resume, error: saveError } = await supabase
 
 ---
 
-## Part 2: Document-Aware AI Analysis & Reformat (MAJOR UPDATE)
+### Automatic Document Verification (Current Implementation)
+
+**As of 2025-11-23**, the system now automatically performs document-aware analysis and verification **during the initial resume generation**. This means:
+
+1. **No Manual Steps Required**: Users don't need to click "Analyze" or "Apply Suggestions" - it's done automatically
+2. **Every Resume is Verified**: 100% of generated resumes go through the document verification process
+3. **Zero Fabrication at Generation**: Users never see an unverified resume with potential fabrications
+4. **Complete Confidence**: Every resume shown has been checked against source documents
+
+**New Flow:**
+```
+User clicks "Generate Resume"
+  ↓
+System generates initial draft
+  ↓
+🔄 AUTOMATIC: Analyze against job description + original documents
+  ↓
+🔄 AUTOMATIC: Categorize suggestions as [REPHRASE], [INFERENCE], [GAP]
+  ↓
+🔄 AUTOMATIC: Apply only verified [REPHRASE] and conservative [INFERENCE]
+  ↓
+🔄 AUTOMATIC: Reject all [GAP] items (skills not in documents)
+  ↓
+✅ User receives document-verified resume
+```
+
+**UI Changes:**
+- ✅ Removed manual "AI Analysis" button
+- ✅ Removed manual "Apply Verified Suggestions" button
+- ✅ Added "Verified" badge to all resume cards
+- ✅ Added "Document Verified" card in preview showing verification details
+- ✅ Stored verification metadata (`document_verified: true`, `documents_checked: N`)
+
+**Result:** Users have complete confidence that every resume is truthful and interview-ready from the moment it's generated.
+
+---
+
+## Part 2: Document-Aware AI Analysis & Reformat (ORIGINAL IMPLEMENTATION)
 
 ### The Fabrication Problem (Before)
 
