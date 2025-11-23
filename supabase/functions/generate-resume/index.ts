@@ -209,20 +209,48 @@ ${jobDescription}
 RESUME:
 ${content}
 
-Analyze the following dimensions:
+Analyze the following 5 dimensions and provide scores:
 
-1. **Hard Skills Match** (30%): Technical skills, tools, software, certifications, programming languages
-2. **Soft Skills Match** (20%): Leadership, communication, teamwork, problem-solving
-3. **Keyword Density** (20%): Presence of key job-related terms and phrases
-4. **Semantic Matching** (20%): Understanding of synonyms and related concepts (e.g., "managed" = "led", "SQL" relates to "database")
-5. **Searchability** (10%): ATS-friendly formatting, clear section headers, proper structure
+1. **Hard Skills Match** (30% weight): Technical skills, tools, software, certifications, programming languages
+2. **Soft Skills Match** (20% weight): Leadership, communication, teamwork, problem-solving
+3. **Keyword Density** (20% weight): Presence of key job-related terms and phrases
+4. **Semantic Matching** (20% weight): Understanding of synonyms and related concepts
+5. **Searchability** (10% weight): ATS-friendly formatting, clear section headers, proper structure
 
-For each dimension, provide:
-- Score out of 100
-- Key matches found
-- What's missing (if anything)
-
-Then calculate the weighted overall ATS score (0-100).`;
+Return a JSON object with this EXACT structure:
+{
+  "hardSkillsScore": 75,
+  "softSkillsScore": 80,
+  "keywordScore": 70,
+  "semanticScore": 85,
+  "searchabilityScore": 90,
+  "overallScore": 78,
+  "breakdown": {
+    "hardSkills": {
+      "score": 75,
+      "matches": ["Python", "SQL", "Project Management"],
+      "gaps": ["Docker", "Kubernetes"]
+    },
+    "softSkills": {
+      "score": 80,
+      "matches": ["Leadership", "Communication"],
+      "gaps": ["Public Speaking"]
+    },
+    "keywords": {
+      "score": 70,
+      "totalRequired": 50,
+      "found": 35
+    },
+    "semantic": {
+      "score": 85,
+      "examples": ["managed team = led team", "database = SQL"]
+    },
+    "searchability": {
+      "score": 90,
+      "issues": []
+    }
+  }
+}`;
 
       try {
         const scoringResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -236,7 +264,7 @@ Then calculate the weighted overall ATS score (0-100).`;
             messages: [
               { 
                 role: 'system', 
-                content: 'You are an ATS expert. Respond with a JSON object containing: hardSkillsScore, softSkillsScore, keywordScore, semanticScore, searchabilityScore, overallScore, breakdown (object with matches and gaps for each category).'
+                content: 'You are an ATS scoring expert. Return ONLY valid JSON in the exact structure requested. Do not include explanations or markdown formatting.'
               },
               { role: 'user', content: scoringPrompt }
             ],
@@ -246,31 +274,37 @@ Then calculate the weighted overall ATS score (0-100).`;
 
         if (scoringResponse.ok) {
           const scoringData = await scoringResponse.json();
-          const analysis = JSON.parse(scoringData.choices[0].message.content);
+          const rawContent = scoringData.choices[0].message.content;
           
-          console.log('ATS Analysis:', JSON.stringify(analysis, null, 2));
+          // Log raw response for debugging
+          console.log('Raw AI scoring response:', rawContent.substring(0, 500));
           
-          return {
-            score: Math.round(analysis.overallScore || 50),
-            breakdown: analysis,
-            matchedKeywords: analysis.breakdown?.hardSkills?.matches || [],
-            uniqueKeywords: []
-          };
+          try {
+            const analysis = JSON.parse(rawContent);
+            
+            console.log('✅ ATS 5-Part Analysis Complete:');
+            console.log('  Hard Skills:', analysis.hardSkillsScore || 0);
+            console.log('  Soft Skills:', analysis.softSkillsScore || 0);
+            console.log('  Keywords:', analysis.keywordScore || 0);
+            console.log('  Semantic:', analysis.semanticScore || 0);
+            console.log('  Searchability:', analysis.searchabilityScore || 0);
+            console.log('  Overall:', analysis.overallScore || 0);
+            
+            return {
+              score: Math.round(analysis.overallScore || 50),
+              breakdown: analysis,
+              matchedKeywords: analysis.breakdown?.hardSkills?.matches || [],
+              uniqueKeywords: []
+            };
+          } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            console.error('Failed content:', rawContent);
+            throw parseError;
+          }
         } else {
-          console.error('AI scoring failed, falling back to simple matching');
-          // Fallback to simple keyword matching
-          const jobKeywords: string[] = jobDescription.toLowerCase()
-            .split(/\W+/)
-            .filter((word: string) => word.length > 3);
-          const uniqueKeywords: string[] = [...new Set(jobKeywords)];
-          const contentLower = content.toLowerCase();
-          const matchedKeywords = uniqueKeywords.filter((kw: string) => contentLower.includes(kw));
-          return {
-            score: Math.min(100, Math.round((matchedKeywords.length / uniqueKeywords.length) * 100)),
-            matchedKeywords,
-            uniqueKeywords,
-            breakdown: null
-          };
+          const errorText = await scoringResponse.text();
+          console.error('AI scoring API failed:', errorText);
+          throw new Error('AI scoring API failed');
         }
       } catch (error) {
         console.error('Error in AI scoring:', error);
@@ -281,6 +315,9 @@ Then calculate the weighted overall ATS score (0-100).`;
         const uniqueKeywords: string[] = [...new Set(jobKeywords)];
         const contentLower = content.toLowerCase();
         const matchedKeywords = uniqueKeywords.filter((kw: string) => contentLower.includes(kw));
+        
+        console.log('⚠️ Falling back to simple keyword matching');
+        
         return {
           score: Math.min(100, Math.round((matchedKeywords.length / uniqueKeywords.length) * 100)),
           matchedKeywords,
