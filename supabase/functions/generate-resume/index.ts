@@ -199,22 +199,98 @@ Company: [company name or "Not specified"]`;
 
     console.log('Generated initial resume length:', resumeContent.length);
 
-    // Calculate simple ATS score based on keyword matching
-    const calculateATSScore = (content: string) => {
-      const jobKeywords: string[] = jobDescription.toLowerCase()
-        .split(/\W+/)
-        .filter((word: string) => word.length > 3);
-      const uniqueKeywords: string[] = [...new Set(jobKeywords)];
-      const contentLower = content.toLowerCase();
-      const matchedKeywords = uniqueKeywords.filter((kw: string) => contentLower.includes(kw));
-      return {
-        score: Math.min(100, Math.round((matchedKeywords.length / uniqueKeywords.length) * 100)),
-        matchedKeywords,
-        uniqueKeywords
-      };
+    // Calculate sophisticated ATS score using AI semantic analysis
+    const calculateATSScore = async (content: string) => {
+      const scoringPrompt = `You are an expert ATS (Applicant Tracking System) analyzer. Analyze this resume against the job description and provide a comprehensive ATS compatibility score.
+
+JOB DESCRIPTION:
+${jobDescription}
+
+RESUME:
+${content}
+
+Analyze the following dimensions:
+
+1. **Hard Skills Match** (30%): Technical skills, tools, software, certifications, programming languages
+2. **Soft Skills Match** (20%): Leadership, communication, teamwork, problem-solving
+3. **Keyword Density** (20%): Presence of key job-related terms and phrases
+4. **Semantic Matching** (20%): Understanding of synonyms and related concepts (e.g., "managed" = "led", "SQL" relates to "database")
+5. **Searchability** (10%): ATS-friendly formatting, clear section headers, proper structure
+
+For each dimension, provide:
+- Score out of 100
+- Key matches found
+- What's missing (if anything)
+
+Then calculate the weighted overall ATS score (0-100).`;
+
+      try {
+        const scoringResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${lovableApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'google/gemini-2.5-flash',
+            messages: [
+              { 
+                role: 'system', 
+                content: 'You are an ATS expert. Respond with a JSON object containing: hardSkillsScore, softSkillsScore, keywordScore, semanticScore, searchabilityScore, overallScore, breakdown (object with matches and gaps for each category).'
+              },
+              { role: 'user', content: scoringPrompt }
+            ],
+            response_format: { type: "json_object" }
+          }),
+        });
+
+        if (scoringResponse.ok) {
+          const scoringData = await scoringResponse.json();
+          const analysis = JSON.parse(scoringData.choices[0].message.content);
+          
+          console.log('ATS Analysis:', JSON.stringify(analysis, null, 2));
+          
+          return {
+            score: Math.round(analysis.overallScore || 50),
+            breakdown: analysis,
+            matchedKeywords: analysis.breakdown?.hardSkills?.matches || [],
+            uniqueKeywords: []
+          };
+        } else {
+          console.error('AI scoring failed, falling back to simple matching');
+          // Fallback to simple keyword matching
+          const jobKeywords: string[] = jobDescription.toLowerCase()
+            .split(/\W+/)
+            .filter((word: string) => word.length > 3);
+          const uniqueKeywords: string[] = [...new Set(jobKeywords)];
+          const contentLower = content.toLowerCase();
+          const matchedKeywords = uniqueKeywords.filter((kw: string) => contentLower.includes(kw));
+          return {
+            score: Math.min(100, Math.round((matchedKeywords.length / uniqueKeywords.length) * 100)),
+            matchedKeywords,
+            uniqueKeywords,
+            breakdown: null
+          };
+        }
+      } catch (error) {
+        console.error('Error in AI scoring:', error);
+        // Fallback to simple keyword matching
+        const jobKeywords: string[] = jobDescription.toLowerCase()
+          .split(/\W+/)
+          .filter((word: string) => word.length > 3);
+        const uniqueKeywords: string[] = [...new Set(jobKeywords)];
+        const contentLower = content.toLowerCase();
+        const matchedKeywords = uniqueKeywords.filter((kw: string) => contentLower.includes(kw));
+        return {
+          score: Math.min(100, Math.round((matchedKeywords.length / uniqueKeywords.length) * 100)),
+          matchedKeywords,
+          uniqueKeywords,
+          breakdown: null
+        };
+      }
     };
 
-    let { score: atsScore, matchedKeywords, uniqueKeywords } = calculateATSScore(resumeContent);
+    let { score: atsScore, matchedKeywords, uniqueKeywords, breakdown: atsBreakdown } = await calculateATSScore(resumeContent);
     console.log('Initial ATS Score:', atsScore);
 
     // ALWAYS run document-aware analysis and reformat workflow
@@ -435,8 +511,8 @@ OUTPUT: Reformatted resume with ONLY verified content from original documents.`;
           const reformatData = await reformatResponse.json();
           const refinedContent = reformatData.choices[0].message.content;
           
-          // Recalculate ATS score for refined version
-          const refinedResult = calculateATSScore(refinedContent);
+          // Recalculate ATS score for refined version using AI semantic analysis
+          const refinedResult = await calculateATSScore(refinedContent);
           
           console.log('Document-Verified ATS Score:', refinedResult.score, '(from initial', atsScore, ')');
           console.log('✅ Resume verified against', documents?.length || 0, 'original documents');
@@ -446,6 +522,7 @@ OUTPUT: Reformatted resume with ONLY verified content from original documents.`;
           atsScore = refinedResult.score;
           matchedKeywords = refinedResult.matchedKeywords;
           uniqueKeywords = refinedResult.uniqueKeywords;
+          atsBreakdown = refinedResult.breakdown;
         }
       }
 
@@ -486,6 +563,7 @@ OUTPUT: Reformatted resume with ONLY verified content from original documents.`;
           document_verified: true,
           verification_date: new Date().toISOString(),
           documents_checked: documents?.length || 0,
+          ats_breakdown: atsBreakdown || null,
         }
       })
       .select()
