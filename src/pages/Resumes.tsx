@@ -21,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { exportResumeWithTemplate, ATSTemplate } from "@/utils/resumeTemplates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResumeContent } from "@/components/ResumeContent";
+import { AnalysisDisplay } from "@/components/AnalysisDisplay";
 
 interface Resume {
   id: string;
@@ -694,38 +695,30 @@ const Resumes = () => {
 
                     {/* AI Analysis Results */}
                     {analysis && (
-                      <Card className="p-4 bg-gradient-card">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Sparkles className="w-5 h-5 text-primary" />
-                          <h3 className="font-semibold text-foreground">AI Analysis</h3>
+                      <ScrollArea className="h-[400px]">
+                        <div className="pr-4">
+                          <AnalysisDisplay analysis={analysis} />
+                          {!showComparison && (
+                            <Button
+                              onClick={handleReformat}
+                              disabled={isReformatting}
+                              className="w-full mt-4"
+                            >
+                              {isReformatting ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  Reformatting...
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-4 h-4 mr-2" />
+                                  Apply Verified Suggestions
+                                </>
+                              )}
+                            </Button>
+                          )}
                         </div>
-                        <ScrollArea className="h-[300px]">
-                          <div className="prose prose-sm max-w-none">
-                            <pre className="whitespace-pre-wrap font-sans text-xs text-muted-foreground">
-                              {analysis}
-                            </pre>
-                          </div>
-                        </ScrollArea>
-                        {!showComparison && (
-                          <Button
-                            onClick={handleReformat}
-                            disabled={isReformatting}
-                            className="w-full mt-3"
-                          >
-                            {isReformatting ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Reformatting...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="w-4 h-4 mr-2" />
-                                Apply Suggestions & Reformat
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </Card>
+                      </ScrollArea>
                     )}
 
                     {/* Recommendations Card */}

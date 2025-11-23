@@ -51,24 +51,54 @@ serve(async (req) => {
       throw new Error('Job description not found for this resume');
     }
 
+    // Fetch user's original documents (SOURCE OF TRUTH)
+    const { data: documents, error: docsError } = await supabase
+      .from('documents')
+      .select('name, type, extracted_text')
+      .eq('user_id', user.id);
+
+    if (docsError) {
+      console.error('Error fetching documents:', docsError);
+    }
+
+    const documentsContext = documents && documents.length > 0
+      ? documents.map(doc => `[${doc.type.toUpperCase()}: ${doc.name}]\n${doc.extracted_text || ''}`).join('\n\n---\n\n')
+      : 'No original documents available';
+
+    console.log('Fetched', documents?.length || 0, 'user documents for verification');
+
     const jobDescription = resume.job_descriptions.description;
     const jobTitle = resume.job_descriptions.title || 'the position';
     const company = resume.job_descriptions.company || 'the company';
 
     console.log('Analyzing for job:', jobTitle, 'at', company);
 
-    const systemPrompt = `You are an expert ATS (Applicant Tracking System) consultant and career coach. Your role is to analyze resumes and provide specific, actionable feedback to improve their ATS compatibility and appeal to recruiters.
+    const systemPrompt = `You are an expert ATS (Applicant Tracking System) consultant and career coach with access to the candidate's ORIGINAL DOCUMENTS. Your role is to analyze resumes and provide specific, actionable, TRUTHFUL feedback.
 
-Focus on:
-- Keyword optimization for the specific job
-- ATS compatibility issues (formatting, structure)
-- Content improvements (quantifiable achievements, impact statements)
-- Skills gaps and how to address them
-- Section organization and clarity
+CRITICAL RULES FOR CATEGORIZING SUGGESTIONS:
+1. **REPHRASE EXISTING** - Skills, experiences, or achievements found in the original documents that can be reworded for better impact
+   - Example: "automation" in docs → suggest "AI-powered automation" if relevant
+   - Mark with [REPHRASE]
 
-Provide concrete, implementable suggestions that the candidate can act on immediately.`;
+2. **REASONABLE INFERENCE** - Adjacent skills that can be safely implied from documented experience
+   - Example: Used "Python" → can infer "scripting" capability
+   - Must be logically connected to documented skills
+   - Mark with [INFERENCE]
 
-    const userPrompt = `Analyze this resume for the following job position and provide detailed, actionable insights to improve the ATS score and overall effectiveness.
+3. **SKILLS GAP** - Required skills in job description that are NOT found in original documents
+   - Do NOT suggest adding these as if they exist
+   - Instead, flag these as gaps to be addressed through learning
+   - Mark with [GAP]
+
+ANTI-FABRICATION RULES:
+- NEVER suggest adding skills, tools, or experiences not evidenced in original documents
+- NEVER invent metrics, certifications, or job responsibilities
+- When a job requirement isn't met, be honest about the gap
+- Focus on optimizing what truly exists vs. fabricating what doesn't
+
+Provide concrete, implementable suggestions that maintain resume truthfulness.`;
+
+    const userPrompt = `Analyze this resume against the job description while VERIFYING all suggestions against the candidate's original documents.
 
 JOB TITLE: ${jobTitle}
 COMPANY: ${company}
@@ -76,19 +106,40 @@ COMPANY: ${company}
 JOB DESCRIPTION:
 ${jobDescription}
 
-CANDIDATE'S RESUME:
+CURRENT RESUME:
 ${resume.content}
+
+ORIGINAL DOCUMENTS (SOURCE OF TRUTH):
+${documentsContext}
 
 CURRENT ATS SCORE: ${resume.ats_score}%
 
-Please provide:
-1. Top 3-5 specific keywords missing from the resume that appear in the job description
-2. 3-5 concrete content improvements with examples of how to rewrite specific sections
-3. Any ATS compatibility issues (formatting, structure) that need fixing
-4. Skills or qualifications mentioned in the job description that are missing or underemphasized
-5. Specific metrics or quantifiable achievements that should be added
+ANALYSIS REQUIREMENTS:
+Provide a structured analysis with THREE CATEGORIES:
 
-Format your response as a structured analysis with clear sections and bullet points.`;
+1. **[REPHRASE] - Skills from Original Documents**
+   - Keywords/skills found IN original documents that should be emphasized or reworded
+   - Show which document contains the evidence
+   - Example: "Python (from: Resume_2024.pdf) → suggest highlighting 'Python automation'"
+
+2. **[INFERENCE] - Reasonable Inferences**
+   - Skills that can be safely inferred from documented experience
+   - Explain the logical connection
+   - Example: "Git experience (inferred from 'team code projects' in Portfolio.pdf)"
+
+3. **[GAP] - Honest Skills Gaps**
+   - Job requirements NOT found in any original document
+   - Flag as areas for future development, NOT as things to add now
+   - Example: "Docker (required, not found in documents - recommend learning)"
+
+4. **ATS Formatting Issues**
+   - Structure, formatting, or organization problems
+
+5. **Metrics & Achievements**
+   - Only suggest adding metrics that can be derived from documented work
+   - Flag if job requires metrics not present in docs
+
+CRITICAL: For each suggestion, cite which document(s) support it or explicitly state [GAP] if unsupported.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
