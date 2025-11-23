@@ -51,33 +51,62 @@ serve(async (req) => {
       throw new Error('Job description not found for this resume');
     }
 
+    // Fetch user's original documents (SOURCE OF TRUTH)
+    const { data: documents, error: docsError } = await supabase
+      .from('documents')
+      .select('name, type, extracted_text')
+      .eq('user_id', user.id);
+
+    if (docsError) {
+      console.error('Error fetching documents:', docsError);
+    }
+
+    const documentsContext = documents && documents.length > 0
+      ? documents.map(doc => `[${doc.type.toUpperCase()}: ${doc.name}]\n${doc.extracted_text || ''}`).join('\n\n---\n\n')
+      : 'No original documents available';
+
+    console.log('Fetched', documents?.length || 0, 'user documents for verification');
+
     const jobDescription = resume.job_descriptions.description;
     const jobTitle = resume.job_descriptions.title || 'the position';
     const company = resume.job_descriptions.company || 'the company';
 
     console.log('Reformatting for job:', jobTitle, 'at', company);
 
-    const systemPrompt = `You are a resume and ATS expert. You will reformat an existing resume based on specific AI analysis and suggestions to improve its ATS score and effectiveness.
+    const systemPrompt = `You are a resume and ATS expert with access to the candidate's ORIGINAL DOCUMENTS. You will reformat a resume based on AI analysis while STRICTLY adhering to truth and verifiability.
 
-Your task is to:
-- Incorporate the suggested keywords naturally into the resume
-- Implement the content improvements suggested in the analysis
-- Fix any ATS compatibility issues mentioned
-- Add or emphasize skills and qualifications as recommended
-- Include quantifiable achievements where suggested
-- Maintain the same basic structure but improve the content quality
+ANTI-FABRICATION RULES (CRITICAL):
+1. **ONLY add content that can be verified in the original documents**
+2. **NEVER fabricate skills, tools, experiences, metrics, or certifications**
+3. For [REPHRASE] suggestions: Reword existing documented content for better impact
+4. For [INFERENCE] suggestions: Only add if the logical connection is crystal clear
+5. For [GAP] suggestions: DO NOT add these to the resume - they're learning goals
 
-CRITICAL FORMATTING REQUIREMENTS:
-- Use simple text formatting: ALL CAPS for section headers, regular text for content
-- For bullet points, use a simple dash (-) at the start of lines
-- **IMPORTANT**: Wrap ANY new additions, improvements, or significantly changed content in **double asterisks** to make it bold
-- Examples: **Led team of 5 engineers**, **Increased sales by 45%**, **Python, React, Node.js**
-- Only mark content that was added or substantially improved, not minor word changes
-- Keep unchanged content as plain text without asterisks
+ALLOWED OPERATIONS:
+✅ Rephrase documented skills/experiences for stronger impact
+✅ Add keywords that describe existing work (if verifiable in docs)
+✅ Reorganize content for better ATS compatibility
+✅ Quantify achievements IF data exists in original documents
+✅ Emphasize relevant experiences from original documents
 
-Do not invent new experiences or qualifications. Only enhance and rewrite existing content using better language and incorporating the suggested improvements.`;
+FORBIDDEN OPERATIONS:
+❌ Add skills/tools not found in original documents
+❌ Invent metrics or certifications
+❌ Fabricate job responsibilities or projects
+❌ Add technologies never mentioned in documents
+❌ Exaggerate experience level or scope
 
-    const userPrompt = `Reformat this resume incorporating the AI analysis suggestions below.
+FORMATTING REQUIREMENTS:
+- Use simple text: ALL CAPS for headers, regular text for content
+- Bullet points use dash (-) at line start
+- **Bold with double asterisks** ONLY for content with verifiable origins:
+  - [VERIFIED]: Content directly from documents
+  - [INFERRED]: Adjacent skills with clear connection
+- DO NOT bold fabricated content (there shouldn't be any)
+
+You are the final line of defense against resume fraud. Be ruthlessly honest.`;
+
+    const userPrompt = `Reformat this resume using ONLY verifiable content from the original documents.
 
 JOB TITLE: ${jobTitle}
 COMPANY: ${company}
@@ -85,13 +114,25 @@ COMPANY: ${company}
 JOB DESCRIPTION:
 ${jobDescription}
 
-ORIGINAL RESUME:
+CURRENT RESUME:
 ${resume.content}
 
-AI ANALYSIS & SUGGESTIONS:
+ORIGINAL DOCUMENTS (SOURCE OF TRUTH - VERIFY ALL CHANGES AGAINST THESE):
+${documentsContext}
+
+AI ANALYSIS (with categorization):
 ${analysis}
 
-Please reformat the resume incorporating these suggestions. Output ONLY the reformatted resume text with no additional commentary. Remember to mark all new or significantly improved content in **bold** using double asterisks.`;
+INSTRUCTIONS:
+1. Implement [REPHRASE] suggestions by improving how documented content is presented
+2. Carefully evaluate [INFERENCE] suggestions - only add if evidence clearly supports it
+3. IGNORE [GAP] suggestions - do not add unverified content
+4. Fix formatting/ATS issues mentioned in analysis
+5. Mark improvements with **bold** and indicate category:
+   - **content** for [VERIFIED] changes from docs
+   - **content** for [INFERRED] if truly supported
+
+Output ONLY the reformatted resume with no commentary. Be conservative - when in doubt, leave it out.`;
 
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
