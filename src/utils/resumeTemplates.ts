@@ -272,15 +272,56 @@ const exportClassicDOCX = async (resume: Resume) => {
 const exportModernDOCX = async (resume: Resume) => {
   const lines = resume.content.split('\n');
   const paragraphs: Paragraph[] = [];
+  let isFirstLine = true;
+  let isSecondLine = false;
 
   lines.forEach((line) => {
     const trimmedLine = line.trim();
 
     if (!trimmedLine) {
-      paragraphs.push(new Paragraph({ text: '', spacing: { before: 80 } }));
+      paragraphs.push(new Paragraph({ text: '', spacing: { before: 120 } }));
       return;
     }
 
+    // First line (name) - large, bold, centered
+    if (isFirstLine && trimmedLine.length > 0) {
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: trimmedLine,
+              bold: true,
+              size: 32,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 80 },
+        })
+      );
+      isFirstLine = false;
+      isSecondLine = true;
+      return;
+    }
+
+    // Second line (contact info) - centered, smaller
+    if (isSecondLine) {
+      paragraphs.push(
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: trimmedLine,
+              size: 18,
+            }),
+          ],
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 200 },
+        })
+      );
+      isSecondLine = false;
+      return;
+    }
+
+    // Section headers (all caps)
     if (line.match(/^[A-Z\s]+$/) && trimmedLine.length < 30) {
       paragraphs.push(
         new Paragraph({
@@ -291,57 +332,43 @@ const exportModernDOCX = async (resume: Resume) => {
               size: 22,
             }),
           ],
-          border: {
-            bottom: {
-              color: "808080",
-              space: 1,
-              style: BorderStyle.SINGLE,
-              size: 6,
-            },
-          },
-          spacing: { before: 200, after: 100 },
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 240, after: 120 },
         })
       );
-    } else if (line.includes('|') && !line.startsWith('•')) {
+    } 
+    // Job titles with dates (contains |)
+    else if (line.includes('|') && !line.startsWith('•')) {
       paragraphs.push(
         new Paragraph({
           children: [
             new TextRun({
               text: trimmedLine,
               bold: true,
-              size: 20,
+              size: 22,
             }),
           ],
-          spacing: { before: 100, after: 50 },
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 140, after: 80 },
         })
       );
-    } else if (line.startsWith('•')) {
+    } 
+    // Bullet points
+    else if (line.startsWith('•')) {
       paragraphs.push(
         new Paragraph({
           text: trimmedLine.substring(1).trim(),
           bullet: { level: 0 },
-          spacing: { before: 50, after: 50 },
+          spacing: { before: 60, after: 60 },
         })
       );
-    } else if (line.startsWith('[') && line.endsWith(']')) {
-      paragraphs.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: trimmedLine.replace(/[\[\]]/g, ''),
-              bold: true,
-              size: 30,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 150 },
-        })
-      );
-    } else {
+    } 
+    // Regular text
+    else {
       paragraphs.push(
         new Paragraph({
           text: trimmedLine,
-          spacing: { before: 50, after: 50 },
+          spacing: { before: 60, after: 60 },
         })
       );
     }
@@ -351,7 +378,7 @@ const exportModernDOCX = async (resume: Resume) => {
     sections: [{
       properties: {
         page: {
-          margin: { top: 650, right: 650, bottom: 650, left: 650 },
+          margin: { top: 720, right: 720, bottom: 720, left: 720 },
         },
       },
       children: paragraphs,
