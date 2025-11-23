@@ -29,6 +29,7 @@ interface Resume {
   ats_score: number;
   created_at: string;
   content: string;
+  metadata?: any; // Using any to handle Json type from Supabase
 }
 
 const Resumes = () => {
@@ -680,6 +681,104 @@ const Resumes = () => {
                         <p className="text-sm font-medium">{insights.summary}</p>
                       </div>
                     </Card>
+
+                    {/* ATS Breakdown Card - NEW */}
+                    {previewResume.metadata?.ats_breakdown && (
+                      <Card className="p-4 bg-gradient-card">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Target className="w-5 h-5 text-primary" />
+                          <h3 className="font-semibold text-foreground">ATS Analysis Breakdown</h3>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {/* Hard Skills */}
+                          {previewResume.metadata.ats_breakdown.hardSkillsScore !== undefined && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Hard Skills</span>
+                                <span className="text-xs font-medium">{Math.round(previewResume.metadata.ats_breakdown.hardSkillsScore)}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${previewResume.metadata.ats_breakdown.hardSkillsScore}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Soft Skills */}
+                          {previewResume.metadata.ats_breakdown.softSkillsScore !== undefined && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Soft Skills</span>
+                                <span className="text-xs font-medium">{Math.round(previewResume.metadata.ats_breakdown.softSkillsScore)}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${previewResume.metadata.ats_breakdown.softSkillsScore}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Keywords */}
+                          {previewResume.metadata.ats_breakdown.keywordScore !== undefined && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Keywords</span>
+                                <span className="text-xs font-medium">{Math.round(previewResume.metadata.ats_breakdown.keywordScore)}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${previewResume.metadata.ats_breakdown.keywordScore}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Semantic Matching */}
+                          {previewResume.metadata.ats_breakdown.semanticScore !== undefined && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Semantic Match</span>
+                                <span className="text-xs font-medium">{Math.round(previewResume.metadata.ats_breakdown.semanticScore)}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${previewResume.metadata.ats_breakdown.semanticScore}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Searchability */}
+                          {previewResume.metadata.ats_breakdown.searchabilityScore !== undefined && (
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-xs text-muted-foreground">Searchability</span>
+                                <span className="text-xs font-medium">{Math.round(previewResume.metadata.ats_breakdown.searchabilityScore)}%</span>
+                              </div>
+                              <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary"
+                                  style={{ width: `${previewResume.metadata.ats_breakdown.searchabilityScore}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground">
+                            Advanced AI analysis considering keywords, semantic matching, and skill relevance
+                          </p>
+                        </div>
+                      </Card>
+                    )}
 
                     {/* Document Verification Card */}
                     <Card className="p-4 bg-gradient-card border-success/20">
