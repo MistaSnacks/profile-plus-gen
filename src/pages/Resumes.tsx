@@ -114,11 +114,13 @@ const Resumes = () => {
     setPreviewResume(resume);
   };
 
-  const handleDownload = (resume: Resume) => {
-    exportResumeWithTemplate(resume, selectedTemplate, selectedFormat);
+  const handleDownload = (resume: Resume, template?: ATSTemplate, format?: 'pdf' | 'docx') => {
+    const templateToUse = template || selectedTemplate;
+    const formatToUse = format || selectedFormat;
+    exportResumeWithTemplate(resume, templateToUse, formatToUse);
     toast({
       title: "Download Started",
-      description: `Downloading ${selectedTemplate} template as ${selectedFormat.toUpperCase()}`,
+      description: `Downloading ${templateToUse} template as ${formatToUse.toUpperCase()}`,
     });
   };
 
@@ -606,8 +608,23 @@ const Resumes = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => handleDownload(resume)}>
-                          Download ({selectedTemplate} - {selectedFormat.toUpperCase()})
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'classic', 'pdf')}>
+                          Classic - PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'classic', 'docx')}>
+                          Classic - DOCX
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'modern', 'pdf')}>
+                          Modern - PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'modern', 'docx')}>
+                          Modern - DOCX
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'minimal', 'pdf')}>
+                          Minimal - PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDownload(resume, 'minimal', 'docx')}>
+                          Minimal - DOCX
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
