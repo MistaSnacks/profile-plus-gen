@@ -464,7 +464,7 @@ ALLOWED OPTIMIZATIONS:
 ✅ Add keywords from job description to EXISTING experiences (if not fabricating)
 ✅ Improve formatting and structure
 
-CRITICAL: Format as ATS-friendly PLAIN TEXT (no markdown **, ##).
+CRITICAL: Format as ATS-friendly plain text. Use **bold** markers around any content you rephrase, enhance, or infer from documents so users can see AI contributions. Do NOT use ## headers.
 
 [FULL NAME]
 [Contact Info]
