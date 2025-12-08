@@ -875,11 +875,10 @@ const Resumes = () => {
               </div>
             ) : (
               <ScrollArea className="lg:col-span-2 h-full rounded-md border p-4 bg-background">
-                <div className="prose prose-sm max-w-none">
-                  <pre className="whitespace-pre-wrap font-sans text-sm text-foreground">
-                    {previewResume?.content}
-                  </pre>
+                <div className="mb-2 text-xs text-muted-foreground">
+                  <span className="bg-primary/10 px-1 rounded">Highlighted text</span> indicates AI-enhanced content
                 </div>
+                <ResumeContent content={previewResume?.content || ''} />
               </ScrollArea>
             )}
           </div>
