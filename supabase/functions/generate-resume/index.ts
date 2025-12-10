@@ -464,7 +464,14 @@ ALLOWED OPTIMIZATIONS:
 ✅ Add keywords from job description to EXISTING experiences (if not fabricating)
 ✅ Improve formatting and structure
 
-CRITICAL: Format as ATS-friendly plain text. Use **bold** markers around any content you rephrase, enhance, or infer from documents so users can see AI contributions. Do NOT use ## headers.
+CRITICAL: Format as ATS-friendly plain text. Do NOT use ## headers.
+
+HIGHLIGHTING RULE FOR AI CONTRIBUTIONS:
+- Only wrap **specific phrases or words** that you ADD or REPHRASE within a bullet, NOT the entire bullet
+- Example CORRECT: "Led a team of 5 engineers, **reducing processing time by 20%** through workflow optimization"
+- Example WRONG: "**Led a team of 5 engineers, reducing processing time by 20% through workflow optimization**"
+- If a bullet is 100% from original documents unchanged, use NO bold markers
+- If you add a metric, keyword, or rephrase a phrase, wrap ONLY that specific addition in **bold**
 
 [FULL NAME]
 [Contact Info]
