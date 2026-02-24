@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -461,10 +462,15 @@ const Resumes = () => {
     <div className="min-h-screen bg-gradient-subtle">
       <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
+        <motion.header
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
           <h1 className="text-4xl font-bold text-foreground mb-2">My Resumes</h1>
           <p className="text-muted-foreground">View and manage all your generated resumes</p>
-        </header>
+        </motion.header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="p-4 bg-gradient-card shadow-soft">
