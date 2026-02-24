@@ -7,7 +7,6 @@ export const ThreeBackground = () => {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // Scene setup
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(
       75,
@@ -24,68 +23,59 @@ export const ThreeBackground = () => {
     renderer.setClearColor(0x000000, 0);
     mountRef.current.appendChild(renderer.domElement);
 
-    camera.position.z = 5;
+    camera.position.z = 8;
 
-    // Create neon geometric shapes
+    // Subtle, dark wireframe shapes
     const geometries = [
-      new THREE.TorusGeometry(1.5, 0.4, 16, 100),
-      new THREE.OctahedronGeometry(1.2),
-      new THREE.IcosahedronGeometry(1),
-      new THREE.TetrahedronGeometry(1.5),
+      new THREE.TorusGeometry(2, 0.3, 12, 80),
+      new THREE.OctahedronGeometry(1.5),
+      new THREE.IcosahedronGeometry(1.2),
     ];
 
     const materials = [
       new THREE.MeshBasicMaterial({ 
-        color: 0xff00ff, 
+        color: 0xc2528b, 
         wireframe: true,
         transparent: true,
-        opacity: 0.6
+        opacity: 0.12
       }),
       new THREE.MeshBasicMaterial({ 
-        color: 0x00ffff, 
+        color: 0x4d9da0, 
         wireframe: true,
         transparent: true,
-        opacity: 0.5
+        opacity: 0.08
       }),
       new THREE.MeshBasicMaterial({ 
-        color: 0xffff00, 
+        color: 0x7a5bb5, 
         wireframe: true,
         transparent: true,
-        opacity: 0.4
-      }),
-      new THREE.MeshBasicMaterial({ 
-        color: 0x00ff00, 
-        wireframe: true,
-        transparent: true,
-        opacity: 0.5
+        opacity: 0.06
       }),
     ];
 
     const meshes = geometries.map((geo, i) => {
       const mesh = new THREE.Mesh(geo, materials[i]);
-      mesh.position.x = (Math.random() - 0.5) * 10;
-      mesh.position.y = (Math.random() - 0.5) * 10;
-      mesh.position.z = (Math.random() - 0.5) * 5;
+      mesh.position.x = (i - 1) * 4;
+      mesh.position.y = (Math.random() - 0.5) * 3;
+      mesh.position.z = -2 - i;
       scene.add(mesh);
       return mesh;
     });
 
-    // Animation
     let animationId: number;
     const animate = () => {
       animationId = requestAnimationFrame(animate);
 
       meshes.forEach((mesh, i) => {
-        mesh.rotation.x += 0.001 * (i + 1);
-        mesh.rotation.y += 0.002 * (i + 1);
-        mesh.position.y += Math.sin(Date.now() * 0.001 + i) * 0.001;
+        mesh.rotation.x += 0.0005 * (i + 1);
+        mesh.rotation.y += 0.001 * (i + 1);
+        mesh.position.y += Math.sin(Date.now() * 0.0003 + i) * 0.0005;
       });
 
       renderer.render(scene, camera);
     };
     animate();
 
-    // Handle resize
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -93,7 +83,6 @@ export const ThreeBackground = () => {
     };
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationId);
@@ -107,7 +96,7 @@ export const ThreeBackground = () => {
     <div 
       ref={mountRef} 
       className="fixed inset-0 pointer-events-none z-0"
-      style={{ opacity: 0.3 }}
+      style={{ opacity: 0.4 }}
     />
   );
 };

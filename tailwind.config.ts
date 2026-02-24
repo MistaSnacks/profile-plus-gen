@@ -76,6 +76,9 @@ export default {
         glow: "var(--shadow-glow)",
         "glow-cyan": "var(--shadow-glow-cyan)",
         "glow-yellow": "var(--shadow-glow-yellow)",
+        inset: "var(--shadow-inset)",
+        emboss: "var(--shadow-emboss)",
+        deboss: "var(--shadow-deboss)",
       },
       borderRadius: {
         lg: "var(--radius)",
