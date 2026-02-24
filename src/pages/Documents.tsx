@@ -11,6 +11,7 @@ import { Navigation } from "@/components/Navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { motion } from "framer-motion";
 
 type Document = {
   id: string;
@@ -374,10 +375,15 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
     <div className="min-h-screen bg-gradient-subtle">
       <Navigation />
       <div className="container mx-auto px-4 py-8">
-        <header className="mb-8">
+        <motion.header
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
           <h1 className="text-4xl font-bold text-foreground mb-2">Document Library</h1>
           <p className="text-muted-foreground">Manage your resumes, work experience, and skills documents</p>
-        </header>
+        </motion.header>
 
         {showOnboarding && (
           <Alert className="mb-8 bg-primary/5 border-primary/20">
@@ -591,33 +597,39 @@ ${manualEntry.additionalInfo ? `ADDITIONAL INFORMATION:\n${manualEntry.additiona
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all hover:scale-[1.02]">
-            <FileText className="w-8 h-8 text-primary mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">Resumes</h3>
-            <p className="text-2xl font-bold text-foreground mb-1">{docsByType.resume}</p>
-            <p className="text-xs text-muted-foreground">Base versions</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all hover:scale-[1.02]">
-            <Briefcase className="w-8 h-8 text-secondary mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">Experience</h3>
-            <p className="text-2xl font-bold text-foreground mb-1">{docsByType.experience}</p>
-            <p className="text-xs text-muted-foreground">Work documents</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all hover:scale-[1.02]">
-            <Award className="w-8 h-8 text-accent mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">Skills</h3>
-            <p className="text-2xl font-bold text-foreground mb-1">{docsByType.skills}</p>
-            <p className="text-xs text-muted-foreground">Skill lists</p>
-          </Card>
-
-          <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-all hover:scale-[1.02]">
-            <Linkedin className="w-8 h-8 text-info mb-3" />
-            <h3 className="font-semibold text-foreground mb-1">LinkedIn</h3>
-            <p className="text-sm text-muted-foreground">Not connected</p>
-            <Button size="sm" variant="outline" className="mt-2">Connect</Button>
-          </Card>
+          {[
+            { icon: FileText, label: "Resumes", value: docsByType.resume, sub: "Base versions", color: "text-primary" },
+            { icon: Briefcase, label: "Experience", value: docsByType.experience, sub: "Work documents", color: "text-secondary" },
+            { icon: Award, label: "Skills", value: docsByType.skills, sub: "Skill lists", color: "text-accent" },
+          ].map((card, i) => (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 + i * 0.08 }}
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+            >
+              <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
+                <card.icon className={`w-8 h-8 ${card.color} mb-3`} />
+                <h3 className="font-semibold text-foreground mb-1">{card.label}</h3>
+                <p className="text-2xl font-bold text-foreground mb-1">{card.value}</p>
+                <p className="text-xs text-muted-foreground">{card.sub}</p>
+              </Card>
+            </motion.div>
+          ))}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.34 }}
+            whileHover={{ y: -4, transition: { duration: 0.2 } }}
+          >
+            <Card className="p-6 bg-gradient-card shadow-soft hover:shadow-medium transition-shadow">
+              <Linkedin className="w-8 h-8 text-info mb-3" />
+              <h3 className="font-semibold text-foreground mb-1">LinkedIn</h3>
+              <p className="text-sm text-muted-foreground">Not connected</p>
+              <Button size="sm" variant="outline" className="mt-2">Connect</Button>
+            </Card>
+          </motion.div>
         </div>
 
         <Card className="p-6 bg-card shadow-soft">
