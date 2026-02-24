@@ -18,7 +18,6 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
 
   useEffect(() => {
-    // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         navigate("/generate");
@@ -57,7 +56,6 @@ const Auth = () => {
         description: "You can now log in with your credentials.",
       });
       
-      // Auto login after signup
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -104,17 +102,22 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      {/* Ambient glow */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/5 rounded-full blur-[120px]" />
+      </div>
+
+      <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center mx-auto mb-4">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="w-14 h-14 rounded-xl bg-gradient-primary flex items-center justify-center mx-auto mb-4 shadow-emboss border border-primary/30">
+            <Sparkles className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">ATS Resume Builder</h1>
-          <p className="text-muted-foreground">Create tailored resumes with AI</p>
+          <h1 className="text-2xl font-bold text-foreground mb-1">ATS Resume Builder</h1>
+          <p className="text-sm text-muted-foreground">Create tailored resumes with AI</p>
         </div>
 
-        <Card className="p-6 bg-card shadow-medium">
+        <Card className="p-6">
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
@@ -147,7 +150,7 @@ const Auth = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-primary"
+                  className="w-full"
                   disabled={loading}
                 >
                   {loading ? "Signing in..." : "Sign In"}
@@ -193,7 +196,7 @@ const Auth = () => {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full bg-gradient-primary"
+                  className="w-full"
                   disabled={loading}
                 >
                   {loading ? "Creating account..." : "Create Account"}
