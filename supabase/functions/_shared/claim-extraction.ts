@@ -66,34 +66,46 @@ Return ONLY a JSON object: {"claims": [...]}.`;
   return { system, user };
 }
 
+/** A ProposedClaim paired with its position in the model's OWN output array
+ *  (before malformed entries are dropped). `supports` indexes are defined in
+ *  terms of that original array, so this position must survive filtering. */
+export interface IndexedClaim {
+  claim: ProposedClaim;
+  /** Position in the original proposal array (index into `value.claims`). */
+  index: number;
+}
+
 export function parseProposedClaims(value: unknown): {
-  valid: ProposedClaim[];
+  valid: IndexedClaim[];
   malformed: { raw: unknown; reason: string }[];
 } {
   if (typeof value !== "object" || value === null || !Array.isArray((value as { claims?: unknown }).claims)) {
     throw new Error('AI response is not an object with a "claims" array');
   }
-  const valid: ProposedClaim[] = [];
+  const valid: IndexedClaim[] = [];
   const malformed: { raw: unknown; reason: string }[] = [];
-  for (const raw of (value as { claims: unknown[] }).claims) {
+  (value as { claims: unknown[] }).claims.forEach((raw, index) => {
     const reason = validateClaimShape(raw);
     if (reason) {
       malformed.push({ raw, reason });
     } else {
       const c = raw as Record<string, unknown>;
       valid.push({
-        kind: c.kind as "verified" | "inferred",
-        type: c.type as ClaimType,
-        text: c.text as string,
-        labels: Array.isArray(c.labels) ? (c.labels as unknown[]).filter((l): l is string => typeof l === "string") : [],
-        quote: typeof c.quote === "string" ? c.quote : undefined,
-        supports: Array.isArray(c.supports) ? (c.supports as unknown[]).filter((s): s is number => Number.isInteger(s)) : undefined,
-        reasoning: typeof c.reasoning === "string" ? c.reasoning : undefined,
-        date_start: typeof c.date_start === "string" ? c.date_start : null,
-        date_end: typeof c.date_end === "string" ? c.date_end : null,
+        index,
+        claim: {
+          kind: c.kind as "verified" | "inferred",
+          type: c.type as ClaimType,
+          text: c.text as string,
+          labels: Array.isArray(c.labels) ? (c.labels as unknown[]).filter((l): l is string => typeof l === "string") : [],
+          quote: typeof c.quote === "string" ? c.quote : undefined,
+          supports: Array.isArray(c.supports) ? (c.supports as unknown[]).filter((s): s is number => Number.isInteger(s)) : undefined,
+          reasoning: typeof c.reasoning === "string" ? c.reasoning : undefined,
+          date_start: typeof c.date_start === "string" ? c.date_start : null,
+          date_end: typeof c.date_end === "string" ? c.date_end : null,
+        },
       });
     }
-  }
+  });
   return { valid, malformed };
 }
 
@@ -107,43 +119,47 @@ function validateClaimShape(raw: unknown): string | null {
 }
 
 export function admitClaims(
-  proposals: ProposedClaim[],
+  proposals: IndexedClaim[],
   documentText: string,
 ): { admitted: AdmittedClaim[]; rejected: RejectedClaim[] } {
   const admitted: AdmittedClaim[] = [];
   const rejected: RejectedClaim[] = [];
+  // Keyed by ORIGINAL proposal-array position — the same space `supports`
+  // indexes live in — not by position within the (possibly filtered) array
+  // passed in here.
   const admittedVerifiedIndexes = new Set<number>();
 
   // Pass 1: verified claims — the quote must literally exist in the document.
-  proposals.forEach((claim, index) => {
-    if (claim.kind !== "verified") return;
+  for (const { claim, index } of proposals) {
+    if (claim.kind !== "verified") continue;
     if (!claim.quote || claim.quote.trim() === "") {
       rejected.push({ claim, index, reason: "verified claim missing quote" });
-      return;
+      continue;
     }
     const match = findQuote(claim.quote, documentText);
     if (!match.found) {
       rejected.push({ claim, index, reason: `quote not found in document: "${claim.quote.slice(0, 80)}"` });
-      return;
+      continue;
     }
     admitted.push({ ...claim, index, evidence: { quote: claim.quote, start: match.start, end: match.end } });
     admittedVerifiedIndexes.add(index);
-  });
+  }
 
-  // Pass 2: inferred claims — every support must be an ADMITTED verified claim.
-  proposals.forEach((claim, index) => {
-    if (claim.kind !== "inferred") return;
+  // Pass 2: inferred claims — every support must be an ADMITTED verified claim,
+  // resolved by its ORIGINAL proposal-array position.
+  for (const { claim, index } of proposals) {
+    if (claim.kind !== "inferred") continue;
     if (!claim.supports || claim.supports.length === 0) {
       rejected.push({ claim, index, reason: "inferred claim has no supports" });
-      return;
+      continue;
     }
     const bad = claim.supports.filter((s) => !admittedVerifiedIndexes.has(s));
     if (bad.length > 0) {
       rejected.push({ claim, index, reason: `supports reference non-admitted claims: [${bad.join(", ")}]` });
-      return;
+      continue;
     }
     admitted.push({ ...claim, index });
-  });
+  }
 
   return { admitted, rejected };
 }

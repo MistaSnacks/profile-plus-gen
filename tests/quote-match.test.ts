@@ -38,4 +38,24 @@ describe("findQuote", () => {
     expect(result.found).toBe(true);
     expect(source.slice(result.start, result.end)).toBe("Reduced chargebacks by 18%");
   });
+
+  it("keeps offsets in sync when a multi-codepoint lowercasing char (Turkish İ) precedes the quote", () => {
+    // "İ".toLowerCase() produces TWO characters ("i" + combining dot above),
+    // which must push two entries onto the offset map, not one.
+    const source = "İstanbul team: Built dashboards in Tableau for clients.";
+    const quote = "Built dashboards in Tableau";
+    const result = findQuote(quote, source);
+    expect(result.found).toBe(true);
+    expect(Number.isFinite(result.end)).toBe(true);
+    expect(source.slice(result.start, result.end)).toBe(quote);
+  });
+
+  it("keeps offsets in sync with several multi-codepoint lowercasing chars before the quote", () => {
+    const source = "İİİ Built dashboards in Tableau for clients.";
+    const quote = "Built dashboards in Tableau";
+    const result = findQuote(quote, source);
+    expect(result.found).toBe(true);
+    expect(Number.isFinite(result.end)).toBe(true);
+    expect(source.slice(result.start, result.end)).toBe(quote);
+  });
 });
