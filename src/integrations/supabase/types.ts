@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      claim_evidence: {
+        Row: {
+          claim_id: string
+          created_at: string
+          document_id: string
+          end_offset: number
+          id: string
+          match_verified: boolean
+          quote: string
+          start_offset: number
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          document_id: string
+          end_offset: number
+          id?: string
+          match_verified?: boolean
+          quote: string
+          start_offset: number
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          document_id?: string
+          end_offset?: number
+          id?: string
+          match_verified?: boolean
+          quote?: string
+          start_offset?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_evidence_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_evidence_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_links: {
+        Row: {
+          inferred_claim_id: string
+          supporting_claim_id: string
+        }
+        Insert: {
+          inferred_claim_id: string
+          supporting_claim_id: string
+        }
+        Update: {
+          inferred_claim_id?: string
+          supporting_claim_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_links_inferred_claim_id_fkey"
+            columns: ["inferred_claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_links_supporting_claim_id_fkey"
+            columns: ["supporting_claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          created_at: string
+          date_end: string | null
+          date_start: string | null
+          id: string
+          kind: Database["public"]["Enums"]["claim_kind"]
+          labels: string[]
+          origin_document_id: string | null
+          reasoning: string | null
+          status: Database["public"]["Enums"]["claim_status"]
+          text: string
+          type: Database["public"]["Enums"]["claim_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_end?: string | null
+          date_start?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["claim_kind"]
+          labels?: string[]
+          origin_document_id?: string | null
+          reasoning?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          text: string
+          type: Database["public"]["Enums"]["claim_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date_end?: string | null
+          date_start?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["claim_kind"]
+          labels?: string[]
+          origin_document_id?: string | null
+          reasoning?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          text?: string
+          type?: Database["public"]["Enums"]["claim_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_origin_document_id_fkey"
+            columns: ["origin_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_embeddings: {
         Row: {
           chunk_index: number
@@ -223,6 +357,9 @@ export type Database = {
       }
     }
     Enums: {
+      claim_kind: "verified" | "inferred" | "user_attested"
+      claim_status: "active" | "rejected"
+      claim_type: "skill" | "achievement" | "scope" | "credential" | "role"
       document_type: "resume" | "experience" | "skills" | "portfolio" | "other"
     }
     CompositeTypes: {
@@ -351,6 +488,9 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      claim_kind: ["verified", "inferred", "user_attested"],
+      claim_status: ["active", "rejected"],
+      claim_type: ["skill", "achievement", "scope", "credential", "role"],
       document_type: ["resume", "experience", "skills", "portfolio", "other"],
     },
   },
