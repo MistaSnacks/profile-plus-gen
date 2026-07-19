@@ -57,6 +57,9 @@ Rules:
 - "date_start"/"date_end" are "YYYY" or "YYYY-MM" strings when the document states them, else null.
 - Never invent. If the document does not support a claim, do not propose it.
 
+Each claim object has EXACTLY these fields:
+{"kind": "verified" or "inferred", "type": "skill" or "achievement" or "scope" or "credential" or "role", "text": "the claim stated as one short standalone sentence", "labels": ["kebab-case-tag"], "quote": "exact excerpt (verified claims only)", "supports": [0], "reasoning": "one sentence (inferred claims only)", "date_start": "YYYY" or "YYYY-MM" or null, "date_end": "YYYY" or "YYYY-MM" or null}
+
 Return ONLY a JSON object: {"claims": [...]}.`;
 
   const user = `DOCUMENT:\n${documentText}`;
