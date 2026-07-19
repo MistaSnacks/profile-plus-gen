@@ -25,3 +25,4 @@ dist-ssr
 
 eval/fixtures/personal/
 eval/reports/
+.env.eval
