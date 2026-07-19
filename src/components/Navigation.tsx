@@ -1,4 +1,4 @@
-import { FileText, Sparkles, FolderOpen, MessageSquare, LogOut } from "lucide-react";
+import { FileText, Sparkles, FolderOpen, MessageSquare, LogOut, Database } from "lucide-react";
 import { NavLink } from "./NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "./ui/button";
@@ -9,6 +9,7 @@ export const Navigation = () => {
   const { signOut } = useAuth();
   const navItems = [
     { to: "/documents", icon: FileText, label: "Documents" },
+    { to: "/corpus", icon: Database, label: "Corpus" },
     { to: "/generate", icon: Sparkles, label: "Generate" },
     { to: "/resumes", icon: FolderOpen, label: "Resumes" },
     { to: "/chat", icon: MessageSquare, label: "Chat" },
