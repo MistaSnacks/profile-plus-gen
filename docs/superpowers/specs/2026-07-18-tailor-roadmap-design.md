@@ -50,7 +50,7 @@ Move grounding from prompts into data as early as possible. Provenance clicks, f
 
 **Corpus review page.** Minimal UI: claims grouped by role/domain, expandable to receipts, with confirm / reject / edit. Seed of the living career asset; rejection is itself a grounding control.
 
-**Eval harness.** Local script over a fixtures directory (test corpora + job descriptions; the founder's three documents are fixture #1, never the tuning target). Reports per run: fabrication count (output lines tracing to no claim), inference yield (evidence-backed claims surfaced that appear nowhere verbatim in source text), coverage. Replaces the hand-written `fabrication-test-*.md` ritual; becomes the regression gate for all later phases.
+**Eval harness.** Local script over a fixtures directory (test corpora + job descriptions; the founder's three documents are fixture #1, never the tuning target). Reports per run: fabrication count (admitted claims failing evidence re-verification), inference yield (evidence-backed claims surfaced that appear nowhere verbatim in source text). Coverage (requirements ↔ claims) joins the harness in Phase 2, once the matcher that defines it exists. Replaces the hand-written `fabrication-test-*.md` ritual; becomes the regression gate for all later phases.
 
 ## Phase 2 — Grounded generation v2
 
