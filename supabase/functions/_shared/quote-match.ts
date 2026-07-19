@@ -29,8 +29,15 @@ function normalizeWithMap(text: string): Normalized {
         lastWasSpace = true;
       }
     } else {
-      norm += ch.toLowerCase();
-      map.push(i);
+      // toLowerCase() can produce MULTIPLE characters for a single input
+      // char (e.g. Turkish İ U+0130 → "i" + combining dot above U+0307).
+      // Push one map entry per PRODUCED character to keep norm and map
+      // in lockstep, or every offset after this point desyncs.
+      const lower = ch.toLowerCase();
+      for (const c of lower) {
+        norm += c;
+        map.push(i);
+      }
       lastWasSpace = false;
     }
   }
