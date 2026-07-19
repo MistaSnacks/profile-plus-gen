@@ -1,0 +1,9 @@
+Achievement notes, kept for performance reviews.
+
+Q3 2022: Led the chargeback-evidence overhaul. Documented the new SOP and rolled it
+out to the whole fraud pod. Disputes won rate went from 31% to 44% over two quarters.
+
+2023: Was the point person for the Tableau migration off legacy Excel reports.
+Built 9 dashboards used in the weekly risk review.
+
+2023: Interviewed 12 candidates for the analyst team as a panel lead.

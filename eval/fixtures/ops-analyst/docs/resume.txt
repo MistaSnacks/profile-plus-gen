@@ -1,0 +1,17 @@
+JORDAN AVERY
+Fraud Operations Analyst
+
+EXPERIENCE
+
+Fraud Operations Analyst, Brightpay (2021 - 2024)
+- Investigated 40+ escalated chargeback cases weekly using SQL queries against the Snowflake warehouse
+- Built weekly fraud-trend dashboards in Tableau for the risk leadership team
+- Reduced false-positive holds by 18% in 2023 by re-tuning rule thresholds with the data science team
+- Trained 6 new analysts on case triage and dispute-evidence standards
+
+Customer Support Specialist, Brightpay (2019 - 2021)
+- Handled 60+ support tickets daily in Zendesk, maintaining a 96% CSAT score
+- Wrote the team macro library used by 25 agents
+
+EDUCATION
+B.A. Economics, State University (2019)
