@@ -7,6 +7,7 @@ interface Bullet {
   section: string;
   position: number;
   text: string;
+  created_at: string;
 }
 
 export const V2ResumeContent = ({
@@ -21,9 +22,10 @@ export const V2ResumeContent = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("resume_bullets")
-        .select("id, section, position, text")
+        .select("id, section, position, text, created_at")
         .eq("resume_id", resumeId)
-        .order("position", { ascending: true });
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data as Bullet[];
     },
