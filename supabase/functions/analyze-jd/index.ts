@@ -85,13 +85,15 @@ serve(async (req) => {
     const laneDecision = { ...result.lane, laneFallback: result.laneFallback };
 
     if (jdId) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from('job_descriptions')
         .update({ title: parsed.title, company: parsed.company, lane_decision: laneDecision })
         .eq('id', jdId)
-        .eq('user_id', user.id);
-      if (error) {
-        throw new Error(`Failed to update job description: ${error.message}`);
+        .eq('user_id', user.id)
+        .select('id')
+        .single();
+      if (error || !updated) {
+        throw new Error('Job description not found');
       }
     } else {
       const { data: row, error } = await supabase
