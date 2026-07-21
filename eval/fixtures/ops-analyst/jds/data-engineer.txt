@@ -1,0 +1,22 @@
+Senior Data Engineer — Meridian Logistics
+
+About the role
+You will own the pipelines that move our warehouse and shipment data, and the
+models the analytics team builds on top of them.
+
+What you will do
+- Design and operate batch and streaming pipelines in production
+- Model warehouse data for downstream analytics consumers
+- Own data quality monitoring, alerting, and on-call for pipeline incidents
+- Mentor analysts moving into engineering work
+
+What we are looking for
+- 5+ years building production data pipelines
+- Expert Python and SQL
+- Hands-on Airflow or dbt experience
+- Kafka or equivalent streaming platform experience in production
+- Experience with infrastructure as code and CI/CD for data systems
+
+Nice to have
+- Kubernetes experience
+- Prior work in logistics or supply chain

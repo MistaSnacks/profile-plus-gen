@@ -1,0 +1,22 @@
+Fraud Operations Analyst — Northwind Payments
+
+About the role
+You will investigate suspicious payment activity, tune our detection rules, and
+give the risk leadership team the reporting they need to act.
+
+What you will do
+- Investigate escalated chargeback and dispute cases end to end
+- Build and maintain recurring fraud reporting for risk leadership
+- Partner with data science to tune alert thresholds and reduce false positives
+- Document investigation standards and coach newer analysts
+
+What we are looking for
+- 3+ years in fraud, risk, or payment operations
+- Strong SQL for querying transaction data
+- Experience building dashboards in a BI tool such as Tableau or Looker
+- Track record of measurably reducing false positives or fraud losses
+- Bachelor's degree or equivalent practical experience
+
+Nice to have
+- CAMS, CFE, or similar certification
+- Experience onboarding and training analysts
