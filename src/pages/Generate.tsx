@@ -9,6 +9,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
+import {
+  CoveragePanel,
+  type CoverageRow,
+  type LaneInfo,
+  type CoverageSummary,
+} from "@/components/CoveragePanel";
 
 const Generate = () => {
   const { toast } = useToast();
@@ -16,6 +22,10 @@ const Generate = () => {
   const navigate = useNavigate();
   const [jobDescription, setJobDescription] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [engine, setEngine] = useState<"v1" | "v2">("v1");
+  const [coverage, setCoverage] = useState<
+    { rows: CoverageRow[]; lane: LaneInfo; summary: CoverageSummary } | null
+  >(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -34,24 +44,52 @@ const Generate = () => {
     }
 
     setIsGenerating(true);
+    setCoverage(null);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-resume", {
+      if (engine === "v1") {
+        const { data, error } = await supabase.functions.invoke("generate-resume", {
+          body: { jobDescription },
+        });
+        if (error) throw error;
+        toast({
+          title: "Resume generated!",
+          description: `Your resume has been created with an ATS score of ${data.resume?.ats_score ?? "—"}%`,
+        });
+        navigate("/resumes");
+        return;
+      }
+
+      // v2: analyze first so the coverage map is on screen before the resume is written.
+      const { data: analysis, error: analyzeError } = await supabase.functions.invoke("analyze-jd", {
         body: { jobDescription },
       });
+      if (analyzeError) throw analyzeError;
 
-      if (error) throw error;
+      setCoverage({
+        rows: analysis.coverage,
+        lane: analysis.lane,
+        summary: analysis.summary,
+      });
+      toast({
+        title: "Coverage mapped",
+        description: `${analysis.summary.verified} verified, ${analysis.summary.inferred} inferred, ${analysis.summary.gaps} gaps — writing the resume now`,
+      });
+
+      const { data: render, error: renderError } = await supabase.functions.invoke("render-grounded", {
+        body: { jobDescriptionId: analysis.jobDescriptionId },
+      });
+      if (renderError) throw renderError;
 
       toast({
         title: "Resume generated!",
-        description: `Your resume has been created with an ATS score of ${data.atsScore}%`,
+        description: `${render.summary.bullets} bullets, every one backed by a claim`,
       });
-      
       navigate("/resumes");
     } catch (error) {
       console.error("Generation error:", error);
       toast({
         title: "Error",
-        description: "Failed to generate resume. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate resume. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -98,14 +136,31 @@ const Generate = () => {
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
               />
+              <div className="flex items-center gap-2 mt-4">
+                <span className="text-sm text-muted-foreground mr-1">Engine:</span>
+                <Button
+                  size="sm"
+                  variant={engine === "v1" ? "default" : "outline"}
+                  onClick={() => setEngine("v1")}
+                >
+                  v1
+                </Button>
+                <Button
+                  size="sm"
+                  variant={engine === "v2" ? "default" : "outline"}
+                  onClick={() => setEngine("v2")}
+                >
+                  v2 (grounded)
+                </Button>
+              </div>
               <div className="flex items-center gap-3 mt-4">
                 <Button variant="outline" className="flex-1">
                   <Upload className="w-4 h-4 mr-2" />
                   Upload File
                 </Button>
                 <motion.div className="flex-1" whileTap={{ scale: 0.98 }}>
-                  <Button 
-                    className="w-full bg-gradient-primary" 
+                  <Button
+                    className="w-full bg-gradient-primary"
                     onClick={handleGenerate}
                     disabled={isGenerating}
                   >
@@ -121,6 +176,9 @@ const Generate = () => {
                 </motion.div>
               </div>
             </Card>
+            {coverage && (
+              <CoveragePanel coverage={coverage.rows} lane={coverage.lane} summary={coverage.summary} />
+            )}
           </motion.div>
 
           <div className="space-y-6">
