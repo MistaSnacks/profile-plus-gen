@@ -123,13 +123,16 @@ serve(async (req) => {
 
     let finalResumeId = resumeId as string | undefined;
     if (finalResumeId) {
-      const { error } = await supabase
+      const { data: updated, error } = await supabase
         .from('generated_resumes')
         .update({ title, content, lane_decision: jd.lane_decision, metadata: { engine: 'v2' } })
         .eq('id', finalResumeId)
-        .eq('user_id', user.id);
-      if (error) {
-        throw new Error(`Failed to update resume: ${error.message}`);
+        .eq('user_id', user.id)
+        .eq('job_description_id', jobDescriptionId)
+        .select('id')
+        .single();
+      if (error || !updated) {
+        throw new Error('Resume not found for this job description');
       }
       const { error: clearError } = await supabase
         .from('resume_bullets')
