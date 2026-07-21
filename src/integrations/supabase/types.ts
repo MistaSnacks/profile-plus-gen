@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      bullet_claims: {
+        Row: {
+          bullet_id: string
+          claim_id: string
+        }
+        Insert: {
+          bullet_id: string
+          claim_id: string
+        }
+        Update: {
+          bullet_id?: string
+          claim_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bullet_claims_bullet_id_fkey"
+            columns: ["bullet_id"]
+            isOneToOne: false
+            referencedRelation: "resume_bullets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bullet_claims_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_evidence: {
         Row: {
           claim_id: string
@@ -148,6 +178,36 @@ export type Database = {
           },
         ]
       }
+      coverage_claims: {
+        Row: {
+          claim_id: string
+          coverage_id: string
+        }
+        Insert: {
+          claim_id: string
+          coverage_id: string
+        }
+        Update: {
+          claim_id?: string
+          coverage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_claims_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coverage_claims_coverage_id_fkey"
+            columns: ["coverage_id"]
+            isOneToOne: false
+            referencedRelation: "requirement_coverage"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_embeddings: {
         Row: {
           chunk_index: number
@@ -233,6 +293,7 @@ export type Database = {
           format: string | null
           id: string
           job_description_id: string | null
+          lane_decision: Json | null
           metadata: Json | null
           style: string | null
           title: string
@@ -245,6 +306,7 @@ export type Database = {
           format?: string | null
           id?: string
           job_description_id?: string | null
+          lane_decision?: Json | null
           metadata?: Json | null
           style?: string | null
           title: string
@@ -257,6 +319,7 @@ export type Database = {
           format?: string | null
           id?: string
           job_description_id?: string | null
+          lane_decision?: Json | null
           metadata?: Json | null
           style?: string | null
           title?: string
@@ -272,6 +335,47 @@ export type Database = {
           },
         ]
       }
+      jd_requirements: {
+        Row: {
+          created_at: string
+          id: string
+          job_description_id: string
+          position: number
+          priority: Database["public"]["Enums"]["requirement_priority"]
+          text: string
+          type: Database["public"]["Enums"]["requirement_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_description_id: string
+          position: number
+          priority: Database["public"]["Enums"]["requirement_priority"]
+          text: string
+          type: Database["public"]["Enums"]["requirement_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_description_id?: string
+          position?: number
+          priority?: Database["public"]["Enums"]["requirement_priority"]
+          text?: string
+          type?: Database["public"]["Enums"]["requirement_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jd_requirements_job_description_id_fkey"
+            columns: ["job_description_id"]
+            isOneToOne: false
+            referencedRelation: "job_descriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_descriptions: {
         Row: {
           company: string | null
@@ -279,6 +383,7 @@ export type Database = {
           description: string
           id: string
           keywords: string[] | null
+          lane_decision: Json | null
           requirements: string | null
           title: string | null
           user_id: string
@@ -289,6 +394,7 @@ export type Database = {
           description: string
           id?: string
           keywords?: string[] | null
+          lane_decision?: Json | null
           requirements?: string | null
           title?: string | null
           user_id: string
@@ -299,6 +405,7 @@ export type Database = {
           description?: string
           id?: string
           keywords?: string[] | null
+          lane_decision?: Json | null
           requirements?: string | null
           title?: string | null
           user_id?: string
@@ -335,6 +442,79 @@ export type Database = {
         }
         Relationships: []
       }
+      requirement_coverage: {
+        Row: {
+          created_at: string
+          id: string
+          rationale: string | null
+          requirement_id: string
+          status: Database["public"]["Enums"]["coverage_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          rationale?: string | null
+          requirement_id: string
+          status: Database["public"]["Enums"]["coverage_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          rationale?: string | null
+          requirement_id?: string
+          status?: Database["public"]["Enums"]["coverage_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_coverage_requirement_id_fkey"
+            columns: ["requirement_id"]
+            isOneToOne: true
+            referencedRelation: "jd_requirements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resume_bullets: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          resume_id: string
+          section: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position: number
+          resume_id: string
+          section: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          resume_id?: string
+          section?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resume_bullets_resume_id_fkey"
+            columns: ["resume_id"]
+            isOneToOne: false
+            referencedRelation: "generated_resumes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -360,7 +540,10 @@ export type Database = {
       claim_kind: "verified" | "inferred" | "user_attested"
       claim_status: "active" | "rejected"
       claim_type: "skill" | "achievement" | "scope" | "credential" | "role"
+      coverage_status: "verified" | "inferred" | "gap"
       document_type: "resume" | "experience" | "skills" | "portfolio" | "other"
+      requirement_priority: "required" | "preferred"
+      requirement_type: "skill" | "experience" | "credential" | "responsibility"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -488,7 +671,10 @@ export const Constants = {
       claim_kind: ["verified", "inferred", "user_attested"],
       claim_status: ["active", "rejected"],
       claim_type: ["skill", "achievement", "scope", "credential", "role"],
+      coverage_status: ["verified", "inferred", "gap"],
       document_type: ["resume", "experience", "skills", "portfolio", "other"],
+      requirement_priority: ["required", "preferred"],
+      requirement_type: ["skill", "experience", "credential", "responsibility"],
     },
   },
 } as const
