@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.extract-claims]
 verify_jwt = true
+
+[functions.analyze-jd]
+verify_jwt = true
