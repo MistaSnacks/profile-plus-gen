@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { exportResumeWithTemplate, ATSTemplate } from "@/utils/resumeTemplates";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResumeContent } from "@/components/ResumeContent";
+import { V2ResumeContent } from "@/components/V2ResumeContent";
 import { AnalysisDisplay } from "@/components/AnalysisDisplay";
 
 interface Resume {
@@ -884,7 +885,14 @@ const Resumes = () => {
                 <div className="mb-2 text-xs text-muted-foreground">
                   <span className="bg-primary/10 px-1 rounded">Highlighted text</span> indicates AI-enhanced content
                 </div>
-                <ResumeContent content={previewResume?.content || ''} />
+                {previewResume?.metadata?.engine === 'v2' ? (
+                  <V2ResumeContent
+                    resumeId={previewResume.id}
+                    fallbackContent={previewResume.content || ''}
+                  />
+                ) : (
+                  <ResumeContent content={previewResume?.content || ''} />
+                )}
               </ScrollArea>
             )}
           </div>
